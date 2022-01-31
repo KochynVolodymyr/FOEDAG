@@ -99,3 +99,13 @@ add_executable(console_debug
   ${PROJECT_SOURCE_DIR}/../Console/Test/console_standalone.cpp)
 target_link_libraries(console_debug foedag foedagcore compiler tcl_stubb tcl_static zlib console)
 set_target_properties(console_debug PROPERTIES OUTPUT_NAME console)
+
+add_executable(console_tcl
+  ${PROJECT_SOURCE_DIR}/../Console/src/tclmain.cpp
+  ${PROJECT_SOURCE_DIR}/../Console/src/commands.cpp
+  ${PROJECT_SOURCE_DIR}/../Console/src/commandsManager.cpp
+  ${PROJECT_SOURCE_DIR}/../Console/src/qconsole.cpp
+  ${PROJECT_SOURCE_DIR}/../Console/src/qtclconsole.cpp
+  ${PROJECT_SOURCE_DIR}/../Console/src/tclnotify.cpp)
+target_link_libraries(console_tcl foedag foedagcore compiler tcl_stubb tcl_static zlib)
+set_target_properties(console_tcl PROPERTIES OUTPUT_NAME console_tcl)

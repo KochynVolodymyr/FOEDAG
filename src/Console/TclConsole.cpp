@@ -11,8 +11,8 @@ TclConsole::TclConsole(FOEDAG::TclInterpreter *interpreter, std::ostream &out,
       m_tclWorker(new TclWorker{interpreter, out, parent}),
       m_out(out) {
   connect(this, &TclConsole::sendCommand, m_tclWorker, &TclWorker::runCommand);
-  //  connect(this, &TclController::abort_, &m_tclWorker, &TclWorker::abort,
-  //          Qt::DirectConnection);
+//  connect(this, &TclController::abort_, &m_tclWorker, &TclWorker::abort,
+//          Qt::DirectConnection);
   connect(m_tclWorker, &TclWorker::tclFinished, this, &TclConsole::done);
 }
 
@@ -66,7 +66,7 @@ bool TclConsole::isCommandComplete(const QString &command) {
 }
 
 void TclConsole::abort() {
-  //
+  QMetaObject::invokeMethod(m_tclWorker, "abort", Qt::DirectConnection);
 }
 
 void TclConsole::tclFinished() {

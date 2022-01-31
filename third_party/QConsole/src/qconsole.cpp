@@ -401,6 +401,13 @@ void QConsole::keyPressEvent(QKeyEvent *e) {
       }
     }
   }
+  else {
+    if (e->modifiers() == Qt::CTRL) {
+      if (e->matches(QKeySequence::Copy)) {
+        handleTerminateCommand();
+      }
+    }
+  }
 
   if (e->matches(QKeySequence::Find)) {
     handleSearch();

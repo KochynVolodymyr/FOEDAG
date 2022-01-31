@@ -14,11 +14,13 @@ void DriverWatchProc(ClientData instanceData, int mask) {}
 
 int DriverInputProc(ClientData instanceData, char *buf, int bufSize,
                     int *errorCodePtr) {
+  qDebug() << __PRETTY_FUNCTION__ << buf;
   return 0;
 }
 
 int DriverOutputProc(ClientData instanceData, const char *buf, int toWrite,
                      int *errorCodePtr) {
+  qDebug() << __PRETTY_FUNCTION__ << buf;
   return toWrite;
 }
 
@@ -33,8 +35,10 @@ TclWorker::TclWorker(FOEDAG::TclInterpreter *interpreter, std::ostream &out,
 void TclWorker::runCommand(const QString &command) { m_cmd = command; }
 
 void TclWorker::abort() {
+  qDebug() << __PRETTY_FUNCTION__;
   auto resultObjPtr = Tcl_NewObj();
-  int ret = Tcl_CancelEval(m_interpreter->getInterp(), resultObjPtr, NULL, 0);
+  int ret = Tcl_CancelEval(m_interpreter->getInterp(), resultObjPtr, nullptr, 0);
+  qDebug() << ret;
   if (ret != TCL_OK) {
     m_output = Tcl_GetString(resultObjPtr);
   } else {
@@ -91,12 +95,19 @@ void TclWorker::init() {
   };
 
   void *chData = reinterpret_cast<void *>(this);
-  auto stdout_ = Tcl_GetStdChannel(TCL_STDOUT);
-  Tcl_Channel m_channel = Tcl_CreateChannel(ChannelType, FOEDAG_Channel, chData,
+//  auto stdout_ = Tcl_GetStdChannel(TCL_STDOUT);
+  Tcl_Channel m_channel = Tcl_CreateChannel(ChannelType, "stdout", (ClientData) TCL_STDOUT,
                                             TCL_WRITABLE | TCL_READABLE);
+//  Tcl_RegisterChannel(m_interpreter->getInterp(), m_channel);
+//  Tcl_SetStdChannel(m_channel, TCL_STDOUT);
+//  Tcl_UnregisterChannel(m_interpreter->getInterp(), stdout_);
+
+  Tcl_SetChannelOption(NULL, m_channel,
+                       "-translation", "lf");
+  Tcl_SetChannelOption(NULL, m_channel,
+                       "-buffering", "none");
   Tcl_RegisterChannel(m_interpreter->getInterp(), m_channel);
   Tcl_SetStdChannel(m_channel, TCL_STDOUT);
-  Tcl_UnregisterChannel(m_interpreter->getInterp(), stdout_);
 
   auto puts = [](ClientData clientData, Tcl_Interp *interp, int objc,
                  Tcl_Obj *const objv[]) -> int {
@@ -109,5 +120,5 @@ void TclWorker::init() {
     }
     return 0;
   };
-  Tcl_CreateObjCommand(m_interpreter->getInterp(), "puts", puts, chData, 0);
+//  Tcl_CreateObjCommand(m_interpreter->getInterp(), "puts", puts, chData, nullptr);
 }

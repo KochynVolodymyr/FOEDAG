@@ -51,7 +51,7 @@ void registerExampleCommands(FOEDAG::Session* session) {
                          const char* argv[]) -> int {
     Q_UNUSED(clientData)
     if (argc < 3) {
-      Tcl_Eval(interp, "error \"ERROR: Invalid arg number for console_proc\"");
+//      Tcl_Eval(interp, "error \"ERROR: Invalid arg number for console_proc\"");
       return TCL_ERROR;
     }
     QFile file(argv[1]);

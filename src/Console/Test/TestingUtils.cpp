@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "TestingUtils.h"
+#include <QApplication>
 
 namespace FOEDAG::testing {
 
@@ -33,6 +34,16 @@ void test::runAllTests(Tcl_Interp *interp, void *clientData) {
   for (auto test : TestRunner::instance().registeredTests) {
     internal::INIT_TEST(test->name(), test, interp, clientData);
   }
+}
+
+void test::initTest(Tcl_Interp *interp) {
+  finishedEvent = new TestFinished{interp};
+  Tcl_Eval(interp, "test_enables");
+}
+
+void test::testDone() {
+  QApplication::postEvent(
+      finishedEvent, new QEvent(static_cast<QEvent::Type>(QEvent::User + 1)));
 }
 
 TestRunner &TestRunner::instance() {
@@ -49,10 +60,10 @@ void INIT_TEST(const char *name, test *testPtr, Tcl_Interp *interpreter,
   auto lambda = [](void *clientData, Tcl_Interp *interp, int argc,
                    const char *argv[]) -> int {
     test *t = static_cast<test *>(clientData);
-    if (t)
-      return t->runTest(t->clientData, interp, argc, argv);
-    else
-      return TCL_ERROR;
+    t->initTest(interp);
+    auto ret = t->runTest(t->clientData, interp, argc, argv);
+    t->testDone();
+    return ret;
   };
   testPtr->clientData = clientDataPtr;
   Tcl_CreateCommand(interpreter, name, lambda,

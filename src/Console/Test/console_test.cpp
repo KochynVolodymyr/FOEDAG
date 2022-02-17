@@ -28,6 +28,7 @@ TCL_TEST(console_pwd) {
   QString res = console->getPrompt() + "pwd\n" + QDir::currentPath() + "\n" +
                 console->getPrompt();
   CHECK_EXPECTED("pwd\n", res)
+//  QThread::sleep(30);
   return TCL_OK;
 }
 

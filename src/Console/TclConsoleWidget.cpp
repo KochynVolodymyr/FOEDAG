@@ -245,6 +245,7 @@ bool TclConsoleWidget::hasCloseBracket(const QString &str) const {
   for (auto iter = str.crbegin(); iter != str.crend(); iter++)
     if (*iter == QChar{'}'}) return true;
   return false;
+//  return str.endsWith("}");
 }
 
 State TclConsoleWidget::state() const { return m_state; }

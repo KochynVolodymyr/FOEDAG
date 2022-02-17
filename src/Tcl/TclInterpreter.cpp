@@ -71,10 +71,40 @@ void TclInterpreter::registerCmd(const std::string &cmdName, Tcl_CmdProc proc,
 
 std::string TclInterpreter::evalGuiTestFile(const std::string &filename) {
   std::string testHarness = R"(
+  set TEST_ENABLES 1
+  set TESTS_INIT 1
+  set cmds [list ""]
+  proc test_init {} {
+    global TESTS_INIT
+    set TESTS_INIT 1
+  }
+  proc test_enables {} {
+    global TEST_ENABLES
+    puts "YES, WE ARE HERE"
+    incr TEST_ENABLES
+  }
+  proc test_done {} {
+    global TEST_ENABLES
+    puts "YES, WE ARE HERE"
+    set TEST_ENABLES [expr $TEST_ENABLES - 1]
+  }
+  proc run_cmd {cmdNumber} {
+    global cmds
+    if {$cmdNumber == 0} {
+      return
+    }
+    set cmd [lindex $cmds $cmdNumber]
+    puts $cmdNumber
+    puts $cmd ; flush stdout
+    eval $cmd
+    process_qt_events
+    after 10 "run_cmd [expr $cmdNumber-1]"
+  }
   proc test_harness { gui_script } {
-    global CONT errorInfo
+    global CONT errorInfo TEST_ENABLES cmds TESTS_INIT
     set fid [open $gui_script]
     set content [read $fid]
+    set cmd_count 0
     close $fid
     set errorInfo ""
 
@@ -82,7 +112,8 @@ std::string TclInterpreter::evalGuiTestFile(const std::string &filename) {
         
         # Schedule commands
         set lines [split $content "\n"]
-        set time 500
+        set STEP 500
+        set time $STEP
         foreach line $lines {
             if {[regexp {^#} $line]} {
                 continue
@@ -90,22 +121,40 @@ std::string TclInterpreter::evalGuiTestFile(const std::string &filename) {
             if {$line == ""} {
                 continue
             }
-            after $time $line 
-            after $time process_qt_events
+            if {$TESTS_INIT == 1} {
+              lappend cmds $line
+              incr cmd_count
+            } else {
+              after $time $line
+              after $time process_qt_events
+            }
             
-            set time [expr $time + 500]
+            set time [expr $time + $STEP]
+        }
+        if {$TESTS_INIT == 1} {
+          lappend cmds "test_done"
+          incr cmd_count
+        }
+        set time [expr $time + $STEP]
+        if {$TESTS_INIT == 1} {
+          set cmd_count [expr $cmd_count-1]
+          after 500 run_cmd $cmd_count
         }
     }
     
     # Schedule GUI exit
-    set time [expr $time + 500]
-    after $time "puts \"GUI EXIT\" ; flush stdout; set CONT 0"
-    
+    set time [expr $time + 5000]
+    if {$TESTS_INIT == 1} {
+      after $time "error \"GUI EXIT TIMEOUT \" ; flush stderr; set CONT 0"
+    } else {
+      after $time "puts \"GUI EXIT\" ; flush stdout; set CONT 0"
+    }
+
     # Enter loop
     set CONT 1 
     puts TEST_LOOP_ENTERED
     flush stdout
-    while {$CONT} {
+    while {$TEST_ENABLES && $CONT} {
         set a 0
         after 10 set a 1
         vwait a
@@ -114,7 +163,7 @@ std::string TclInterpreter::evalGuiTestFile(const std::string &filename) {
           exit 1
         }
     }
-    puts TEST_LOOP_EXITED
+    puts TEST_LOOP_EXITED$TEST_ENABLES
     flush stdout
     if {$errorInfo != ""} {
         puts $errorInfo

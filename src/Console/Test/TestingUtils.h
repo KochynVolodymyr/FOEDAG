@@ -20,6 +20,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #pragma once
 
+#include <QObject>
+#include <QEvent>
+
 extern "C" {
 #include <tcl.h>
 }
@@ -35,6 +38,19 @@ namespace FOEDAG::testing {
   className &operator=(const className &) = delete; \
   className &operator=(className &&) = delete;
 
+class TestFinished : public QObject {
+  Tcl_Interp *m_interp;
+ public:
+  TestFinished(Tcl_Interp *interp) : m_interp(interp) {}
+ protected:
+  bool event(QEvent *e) {
+    if (e->type() == QEvent::User+1) {
+      Tcl_Eval(m_interp, "test_done");
+    }
+    return true;
+  }
+};
+
 class test {
  public:
   test(const char *name);
@@ -42,6 +58,8 @@ class test {
                       const char *argv[]) = 0;
   const char *name() const;
   static void runAllTests(Tcl_Interp *interp, void *clientData = nullptr);
+  void initTest(Tcl_Interp *interp);
+  void testDone();
 
  public:
   void *clientData;
@@ -49,6 +67,8 @@ class test {
  protected:
   const char *m_name;
   DISABLE_COPY_AND_ASSIGN(test)
+ private:
+  TestFinished *finishedEvent;
 };
 
 class TestRunner {

@@ -40,11 +40,13 @@ namespace FOEDAG::testing {
 
 class TestFinished : public QObject {
   Tcl_Interp *m_interp;
+
  public:
   TestFinished(Tcl_Interp *interp) : m_interp(interp) {}
+
  protected:
   bool event(QEvent *e) {
-    if (e->type() == QEvent::User+1) {
+    if (e->type() == QEvent::User + 1) {
       Tcl_Eval(m_interp, "test_done");
     }
     return true;

@@ -62,7 +62,7 @@ void INIT_TEST(const char *name, test *testPtr, Tcl_Interp *interpreter,
     test *t = static_cast<test *>(clientData);
     t->initTest(interp);
     auto ret = t->runTest(t->clientData, interp, argc, argv);
-    t->testDone();
+    //t->testDone();
     return ret;
   };
   testPtr->clientData = clientDataPtr;

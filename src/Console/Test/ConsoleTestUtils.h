@@ -40,12 +40,13 @@ class StateCheck : public QObject {
   Q_OBJECT
   QString m_text;
   TclConsoleWidget* m_console;
+  TclInterp *m_interp;
   bool m_pass{false};
   uint m_commandCount{1};
 
  public:
-  StateCheck(const QString& textToCheck, FOEDAG::TclConsoleWidget* console)
-      : m_text(textToCheck), m_console(console) {
+  StateCheck(const QString& textToCheck, FOEDAG::TclConsoleWidget* console, TclInterp *interp)
+      : m_text(textToCheck), m_console(console), m_interp(interp) {
     connect(console, &FOEDAG::TclConsoleWidget::stateChanged, this,
             &StateCheck::stateChanged);
     connect(this, &StateCheck::check, this, &StateCheck::stateChanged,
@@ -66,6 +67,7 @@ class StateCheck : public QObject {
   void stateChanged(FOEDAG::State st) {
     if (st == FOEDAG::State::IDLE) {
       m_commandCount--;
+      qDebug() << m_commandCount;
       if (m_commandCount != 0) {
         return;
       }
@@ -78,6 +80,7 @@ class StateCheck : public QObject {
       } else {
         qDebug() << "SUCCESS";
         m_pass = true;
+        Tcl_Eval(m_interp, "after 10 test_done");
 
         // it is important to disconnect everything
         deleteLater();
@@ -93,7 +96,7 @@ class StateCheck : public QObject {
  *  sent one command \a cmd to the console and compare with \a expectedOut
  */
 #define CHECK_EXPECTED(cmd, expectedOut)                                    \
-  FOEDAG::StateCheck* check = new FOEDAG::StateCheck{expectedOut, console}; \
+  FOEDAG::StateCheck* check = new FOEDAG::StateCheck{expectedOut, console, interp}; \
   Q_UNUSED(check)                                                           \
   sendCommand(cmd, console);
 
@@ -102,7 +105,7 @@ class StateCheck : public QObject {
  *  only after last command done.
  */
 #define CHECK_EXPECTED_FOR_FEW_COMMANDS(cmd, expectedOut, commandCount)     \
-  FOEDAG::StateCheck* check = new FOEDAG::StateCheck{expectedOut, console}; \
+  FOEDAG::StateCheck* check = new FOEDAG::StateCheck{expectedOut, console, interp}; \
   check->setCommandCount(commandCount);                                     \
   sendCommand(cmd, console);
 
@@ -111,7 +114,7 @@ class StateCheck : public QObject {
  * doesn't wait for anything.
  */
 #define CHECK_EXPECTED_NOW(cmd, expectedOut)                                \
-  FOEDAG::StateCheck* check = new FOEDAG::StateCheck{expectedOut, console}; \
+  FOEDAG::StateCheck* check = new FOEDAG::StateCheck{expectedOut, console, interp}; \
   sendCommand(cmd, console);                                                \
   check->checkStateQueue();
 

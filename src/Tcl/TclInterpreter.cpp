@@ -72,36 +72,39 @@ void TclInterpreter::registerCmd(const std::string &cmdName, Tcl_CmdProc proc,
 std::string TclInterpreter::evalGuiTestFile(const std::string &filename) {
   std::string testHarness = R"(
   set TEST_ENABLES 1
-  set TESTS_INIT 1
-  set cmds [list ""]
-  proc test_init {} {
-    global TESTS_INIT
-    set TESTS_INIT 1
-  }
+  set cmds [list]
+  set state 0
   proc test_enables {} {
     global TEST_ENABLES
     puts "YES, WE ARE HERE"
     incr TEST_ENABLES
   }
   proc test_done {} {
-    global TEST_ENABLES
-    puts "YES, WE ARE HERE"
+    global TEST_ENABLES state
     set TEST_ENABLES [expr $TEST_ENABLES - 1]
+    incr state
+    puts "TEST DONE $TEST_ENABLES"
   }
-  proc run_cmd {cmdNumber} {
-    global cmds
-    if {$cmdNumber == 0} {
+  proc run_cmd {cmdNumber cmdCount} {
+    global cmds state
+    if {$cmdNumber == $cmdCount} {
       return
     }
     set cmd [lindex $cmds $cmdNumber]
-    puts $cmdNumber
-    puts $cmd ; flush stdout
+    if {$cmd == ""} {
+      error "Empty command"
+      exit 1
+    }
+    puts "$cmdNumber/$cmdCount $cmd"
     eval $cmd
     process_qt_events
-    after 10 "run_cmd [expr $cmdNumber-1]"
+    after 1000
+    vwait state
+    set state 0
+    after 10 "run_cmd [expr $cmdNumber+1] $cmdCount"
   }
   proc test_harness { gui_script } {
-    global CONT errorInfo TEST_ENABLES cmds TESTS_INIT
+    global CONT errorInfo TEST_ENABLES cmds
     set fid [open $gui_script]
     set content [read $fid]
     set cmd_count 0
@@ -121,34 +124,22 @@ std::string TclInterpreter::evalGuiTestFile(const std::string &filename) {
             if {$line == ""} {
                 continue
             }
-            if {$TESTS_INIT == 1} {
-              lappend cmds $line
-              incr cmd_count
-            } else {
-              after $time $line
-              after $time process_qt_events
-            }
-            
+            lappend cmds $line
+            #after $time $line
+            #after $time process_qt_events
             set time [expr $time + $STEP]
         }
-        if {$TESTS_INIT == 1} {
-          lappend cmds "test_done"
-          incr cmd_count
-        }
+        lappend cmds test_done
+        set cmd_count [llength $cmds]
         set time [expr $time + $STEP]
-        if {$TESTS_INIT == 1} {
-          set cmd_count [expr $cmd_count-1]
-          after 500 run_cmd $cmd_count
-        }
+        #set cmd_count [expr $cmd_count-1]
+        after $STEP "run_cmd 0 $cmd_count"
     }
     
     # Schedule GUI exit
-    set time [expr $time + 5000]
-    if {$TESTS_INIT == 1} {
-      after $time "error \"GUI EXIT TIMEOUT \" ; flush stderr; set CONT 0"
-    } else {
-      after $time "puts \"GUI EXIT\" ; flush stdout; set CONT 0"
-    }
+    set time [expr $time + 50000]
+    after $time "error \"GUI EXIT TIMEOUT \" ; flush stderr; set CONT 0"
+    #after $time "puts \"GUI EXIT\" ; flush stdout; set CONT 0"
 
     # Enter loop
     set CONT 1 

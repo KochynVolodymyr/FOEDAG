@@ -77,12 +77,13 @@ std::string TclInterpreter::evalGuiTestFile(const std::string &filename) {
     set content [read $fid]
     close $fid
     set errorInfo ""
+    set step 1000
 
     catch {
-        
+
         # Schedule commands
         set lines [split $content "\n"]
-        set time 500
+        set time $step
         foreach line $lines {
             if {[regexp {^#} $line]} {
                 continue
@@ -90,19 +91,19 @@ std::string TclInterpreter::evalGuiTestFile(const std::string &filename) {
             if {$line == ""} {
                 continue
             }
-            after $time $line 
+            after $time $line
             after $time process_qt_events
-            
-            set time [expr $time + 500]
+
+            incr time $step
         }
     }
-    
+
     # Schedule GUI exit
-    set time [expr $time + 500]
+    incr time $step
     after $time "puts \"GUI EXIT\" ; flush stdout; set CONT 0"
-    
+
     # Enter loop
-    set CONT 1 
+    set CONT 1
     puts TEST_LOOP_ENTERED
     flush stdout
     while {$CONT} {
@@ -120,7 +121,7 @@ std::string TclInterpreter::evalGuiTestFile(const std::string &filename) {
         puts $errorInfo
         exit 1
     }
-    
+
     puts "Tcl Exit" ; flush stdout
     tcl_exit
   }

@@ -21,13 +21,13 @@ void TclConsole::registerInterpreter(TclInterp *interpreter) {
 
 TclConsole::~TclConsole() {
   qDeleteAll(m_tclWorkers);
-  if (m_tclWorker->isRunning()) m_tclWorker->quit();
-  m_tclWorker->wait();
+//  if (m_tclWorker->isRunning()) m_tclWorker->quit();
+//  m_tclWorker->wait();
 }
 
 void TclConsole::run(const QString &command) {
   m_tclWorker->runCommand(command);
-  m_tclWorker->start();
+  m_tclWorker->run();
 }
 
 int TclConsole::returnCode() const { return m_tclWorker->returnCode(); }

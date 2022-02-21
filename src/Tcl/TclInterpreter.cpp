@@ -88,6 +88,7 @@ std::string TclInterpreter::evalGuiTestFile(const std::string &filename) {
   proc run_cmd {cmdNumber cmdCount} {
     global cmds state
     if {$cmdNumber == $cmdCount} {
+      test_done
       return
     }
     set cmd [lindex $cmds $cmdNumber]
@@ -95,10 +96,9 @@ std::string TclInterpreter::evalGuiTestFile(const std::string &filename) {
       error "Empty command"
       exit 1
     }
-    puts "$cmdNumber/$cmdCount $cmd"
+    puts "[expr $cmdNumber + 1]/$cmdCount $cmd"
     eval $cmd
     process_qt_events
-    after 1000
     vwait state
     set state 0
     after 10 "run_cmd [expr $cmdNumber+1] $cmdCount"
@@ -129,7 +129,7 @@ std::string TclInterpreter::evalGuiTestFile(const std::string &filename) {
             #after $time process_qt_events
             set time [expr $time + $STEP]
         }
-        lappend cmds test_done
+        #lappend cmds test_done
         set cmd_count [llength $cmds]
         set time [expr $time + $STEP]
         #set cmd_count [expr $cmd_count-1]

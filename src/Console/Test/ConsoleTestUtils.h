@@ -67,7 +67,6 @@ class StateCheck : public QObject {
   void stateChanged(FOEDAG::State st) {
     if (st == FOEDAG::State::IDLE) {
       m_commandCount--;
-      qDebug() << m_commandCount;
       if (m_commandCount != 0) {
         return;
       }

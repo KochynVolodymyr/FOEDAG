@@ -105,10 +105,13 @@ std::string TclInterpreter::evalGuiTestFile(const std::string &filename) {
     set CONT 1 
     puts TEST_LOOP_ENTERED
     flush stdout
+    set counter 0
     while {$CONT} {
         set a 0
         after 10 set a 1
         vwait a
+        incr counter
+        puts $counter
         if {$errorInfo != ""} {
           puts $errorInfo
           exit 1

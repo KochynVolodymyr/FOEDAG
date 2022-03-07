@@ -33,27 +33,50 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "TclConsole.h"
 #include "TclConsoleBuilder.h"
 #include "TclConsoleWidget.h"
+#include "Main/ConsolePluginInterface.h"
 FOEDAG::Session *GlobalSession;
 
 QWidget *mainWindowBuilder(FOEDAG::CommandLine *cmd,
                            FOEDAG::TclInterpreter *interpreter) {
-  auto buffer = new FOEDAG::StreamBuffer;
-  auto tclConsole = std::make_unique<FOEDAG::TclConsole>(
-      interpreter->getInterp(), buffer->getStream());
-  FOEDAG::TclConsole *c = tclConsole.get();
-  FOEDAG::TclConsoleWidget *console = nullptr;
-  QWidget *w =
-      FOEDAG::createConsole(interpreter->getInterp(), std::move(tclConsole),
-                            buffer, nullptr, &console);
+  FOEDAG::ConsolePluginInterface* console{nullptr};
+  for (auto plug : PluginManager::instance().plugins()) {
+    if (auto consolePlugin = qobject_cast<FOEDAG::ConsolePluginInterface*>(plug)) {
+      console = consolePlugin;
+      break;
+    }
+  }
 
-  if (console) console->setParsers({new FOEDAG::DummyParser});
+  if (console) {
+    // console
+    QWidget *w{nullptr};
+    auto consoleWidget = console->getConsole(interpreter, &w);
+    FOEDAG::TclConsoleWidget *c = dynamic_cast<FOEDAG::TclConsoleWidget *>(w);
+    c->registerCommands(interpreter->getInterp());
+    qDebug() << (c == nullptr);
+    QObject::connect(c, &FOEDAG::TclConsoleWidget::sendCommand, [=](const QString& cmd) {
+      interpreter->evalCmd(cmd.toStdString());
+//      console->runCommand(interpreter, cmd);
+    });
+    return consoleWidget;
+  }
+  return nullptr;
+//  auto buffer = new FOEDAG::StreamBuffer;
+//  auto tclConsole = std::make_unique<FOEDAG::TclConsole>(
+//      interpreter->getInterp(), buffer->getStream());
+//  FOEDAG::TclConsole *c = tclConsole.get();
+//  FOEDAG::TclConsoleWidget *console = nullptr;
+//  QWidget *w =
+//      FOEDAG::createConsole(interpreter->getInterp(), std::move(tclConsole),
+//                            buffer, nullptr, &console);
 
-  std::string design("Some cool design");
-  FOEDAG::Compiler *com = new FOEDAG::Compiler{
-      interpreter, new FOEDAG::Design(design), buffer->getStream(),
-      new FOEDAG::CompilerNotifier{c}};
-  com->RegisterCommands(interpreter, false);
-  return w;
+//  if (console) console->setParsers({new FOEDAG::DummyParser});
+
+//  std::string design("Some cool design");
+//  FOEDAG::Compiler *com = new FOEDAG::Compiler{
+//      interpreter, new FOEDAG::Design(design), buffer->getStream(),
+//      new FOEDAG::CompilerNotifier{c}};
+//  com->RegisterCommands(interpreter, false);
+//  return w;
 }
 
 int main(int argc, char **argv) {

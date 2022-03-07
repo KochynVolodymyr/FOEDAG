@@ -1,9 +1,9 @@
 /*
-Copyright 2021 The Foedag team
+Copyright 2022 The Foedag team
 
 GPL License
 
-Copyright (c) 2021 The Open-Source FPGA Foundation
+Copyright (c) 2022 The Open-Source FPGA Foundation
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,19 +19,24 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #pragma once
+#include <QObject>
+#include <QString>
 
-#include <QGridLayout>
+class PluginManager {
+ public:
+  PluginManager(const PluginManager&) = delete;
+  PluginManager& operator=(const PluginManager&) = delete;
+  static PluginManager& instance();
 
-#include "ConsoleDefines.h"
-#include "SearchWidget.h"
-#include "TclConsoleWidget.h"
+  ~PluginManager();
+  void load(const QString &path, const QStringList &plugins);
+  const QObjectList plugins() const;
 
-namespace FOEDAG {
-class TclInterpreter;
+ private:
+  PluginManager() = default;
+  static QObjectList loadPlugins(const QString &path,
+                                 const QStringList &plugins);
 
-QWidget *createConsole(TclInterpreter *interp,
-                       std::unique_ptr<ConsoleInterface> iConsole,
-                       StreamBuffer *buffer, QWidget *parent = nullptr,
-                       TclConsoleWidget **consolePtr = nullptr);
-
-}  // namespace FOEDAG
+ private:
+  QObjectList m_plugins;
+};

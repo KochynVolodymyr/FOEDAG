@@ -8,23 +8,25 @@
 #include <QScrollBar>
 #include <QStack>
 #include <QTextBlock>
+#include <thread>
 
 #include "ConsoleDefines.h"
 #include "FileInfo.h"
 #include "StreamBuffer.h"
+#include "Tcl/TclInterpreter.h"
 
 namespace FOEDAG {
 
-TclConsoleWidget::TclConsoleWidget(TclInterp *interp,
+TclConsoleWidget::TclConsoleWidget(TclInterpreter *interp,
                                    std::unique_ptr<ConsoleInterface> iConsole,
                                    StreamBuffer *buffer, QWidget *parent)
-    : QConsole(parent), m_console(std::move(iConsole)), m_buffer{buffer} {
+    : QConsole(parent), m_console(std::move(iConsole)), m_buffer{buffer}, m_interp(interp) {
   connect(m_buffer, &StreamBuffer::ready, this, &TclConsoleWidget::put);
   m_formatter.setTextEdit(this);
   if (m_console) {
     connect(m_console.get(), &ConsoleInterface::done, this,
             &TclConsoleWidget::commandDone);
-    registerCommands(interp);
+//    registerCommands(interp);
   }
   setPrompt("# ");
   setTabAllowed(false);
@@ -56,6 +58,10 @@ QString TclConsoleWidget::interpretCommand(const QString &command, int *res) {
     if (handleCommandFromHistory(command, histCommand))
       prepareCommand = histCommand;
     QConsole::interpretCommand(prepareCommand, res);
+    qDebug() << "eval start";
+//    emit sendCommand(prepareCommand.toUtf8());
+//    m_interp->evalCmd(prepareCommand.toStdString());
+    qDebug() << "eval done";
     if (m_console) m_console->run(prepareCommand.toUtf8());
     setMultiLine(false);
     return QString();

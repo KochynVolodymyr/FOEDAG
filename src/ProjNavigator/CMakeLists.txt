@@ -65,6 +65,7 @@ add_executable(projnavigator_bin
  ${PROJECT_SOURCE_DIR}/../ProjNavigator/Test/projnavigator_main.cpp
  #${PROJECT_SOURCE_DIR}/../ProjNavigator/projnavigator.qrc
  )
-target_link_libraries(projnavigator_bin foedag tcl_stubb tcl_static zlib)
+target_link_libraries(projnavigator_bin foedag tcl_stubb #[[tcl_static]] zlib -ltcl9.0)
 set_target_properties(projnavigator_bin PROPERTIES OUTPUT_NAME projnavigator)
+target_link_directories(projnavigator_bin PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../../lib)
 

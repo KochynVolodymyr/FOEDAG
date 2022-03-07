@@ -52,6 +52,7 @@ set (SRC_CPP_LIST
   ConsoleDefines.cpp
   OutputFormatter.cpp
   DummyParser.cpp
+  ConsolePlugin.cpp
 )
 
 set (SRC_H_LIST
@@ -66,6 +67,7 @@ set (SRC_H_LIST
   ConsoleDefines.h
   OutputFormatter.h
   DummyParser.h
+  ConsolePlugin.h
 )
 
 set (SRC_UI_LIST
@@ -104,15 +106,41 @@ add_library(console_testing_lib STATIC
   ${PROJECT_SOURCE_DIR}/../Console/Test/TestingUtils.h
   ${PROJECT_SOURCE_DIR}/../Console/Test/TestingUtils.cpp
 )
-target_link_libraries(console_testing_lib foedag foedagcore compiler tcl_stubb tcl_static zlib console)
+target_link_libraries(console_testing_lib foedag foedagcore compiler tcl_stubb #[[tcl_static]] console)
+
+#add_library(zlib SHARED IMPORTED)
+#set_target_properties(zlib_shared PROPERTIES
+#  IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/lib/libz_shared.so)
+
+#add_library(tcl_shared SHARED IMPORTED)
+#set_target_properties(tcl_shared PROPERTIES
+#  IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/../../lib/libtcl9.0.so)
+
+add_library(console-plugin SHARED
+  ${SRC_CPP_LIST}
+  ${SRC_H_LIST}
+  ${PROJECT_SOURCE_DIR}/../Console/ConsolePlugin.cpp)
+#target_link_directories(console-plugin PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../../lib)
+#target_link_libraries(console-plugin -ltcl9.0)
+target_link_libraries(console-plugin tcl_stubb tcl_shared zlib)
+target_link_libraries(console-plugin foedag foedagcore Qt5::Widgets Qt5::Core Qt5::Gui QConsole)
+add_definitions(-DCONSOLEPLUGIN_LIBRARY)
+set_target_properties(console-plugin PROPERTIES
+         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../plugins)
+target_link_directories(console-plugin PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../../lib)
+
 
 add_executable(console_test
   ${PROJECT_SOURCE_DIR}/../Console/Test/console_main.cpp
   ${PROJECT_SOURCE_DIR}/../Console/Test/console_test.cpp)
-target_link_libraries(console_test console_testing_lib foedag foedagcore compiler tcl_stubb tcl_static zlib console)
+target_link_libraries(console_test console_testing_lib foedag foedagcore compiler tcl_stubb #[[tcl_static]] console)
 set_target_properties(console_test PROPERTIES OUTPUT_NAME console_test)
 
+target_link_directories(console_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../../lib)
 add_executable(console_debug
   ${PROJECT_SOURCE_DIR}/../Console/Test/console_standalone.cpp)
-target_link_libraries(console_debug foedag foedagcore compiler tcl_stubb tcl_static zlib console)
+target_link_libraries(console_debug foedag foedagcore compiler tcl_stubb #[[tcl_static]] console -ltcl9.0)
 set_target_properties(console_debug PROPERTIES OUTPUT_NAME console)
+#target_link_directories(console_debug PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+#target_link_directories(console_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_link_directories(console_debug PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../../lib)

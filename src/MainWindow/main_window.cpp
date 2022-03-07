@@ -37,10 +37,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "NewProject/new_project_dialog.h"
 #include "ProjNavigator/sources_form.h"
 #include "TextEditor/text_editor.h"
+#include "Main/ConsolePluginInterface.h"
+#include "Main/PluginManager.h"
 
 using namespace FOEDAG;
 
-MainWindow::MainWindow(TclInterpreter* interp) : m_interpreter(interp) {
+MainWindow::MainWindow(TclInterpreter* interp)
+    : m_interpreter(interp) {
   /* Window settings */
   setWindowTitle(tr("FOEDAG"));
   resize(350, 250);
@@ -204,41 +207,56 @@ void MainWindow::ReShowWindow(QString strProject) {
   connect(textEditor, SIGNAL(CurrentFileChanged(QString)), sourForm,
           SLOT(SetCurrentFileItem(QString)));
 
-  QWidget* centralWidget = new QWidget(this);
-  QBoxLayout* layout = new QBoxLayout(QBoxLayout::TopToBottom, centralWidget);
-  layout->setContentsMargins(0, 0, 0, 0);
-  layout->setSpacing(0);
-  layout->addWidget(textEditor->GetTextEditor());
-  centralWidget->setLayout(layout);
+  ConsolePluginInterface* console{nullptr};
+  for (auto plug : PluginManager::instance().plugins()) {
+    if (auto consolePlugin = qobject_cast<ConsolePluginInterface*>(plug)) {
+      console = consolePlugin;
+      break;
+    }
+  }
 
-  setCentralWidget(centralWidget);
+  if (console) {
+    // console
+    QDockWidget* consoleDocWidget = new QDockWidget(tr("Console"), this);
+    consoleDocWidget->setObjectName("consoledocwidget");
+    QWidget *w{nullptr};
+    auto consoleWidget = console->getConsole(m_interpreter, &w);
+    TclConsoleWidget *c = dynamic_cast<TclConsoleWidget *>(w);
+    consoleDocWidget->setWidget(consoleWidget);
+    addDockWidget(Qt::BottomDockWidgetArea, consoleDocWidget);
+    c->registerCommands(m_interpreter->getInterp());
+    qDebug() << (c == nullptr);
+    QObject::connect(c, &TclConsoleWidget::sendCommand, this, [this, console](const QString& cmd){
+      m_interpreter->evalCmd(cmd.toStdString());
+//      console->runCommand(m_interpreter, cmd);
+    });
+  } else {
+    qDebug() << "No console";
+  }
 
-  // console
-  QDockWidget* consoleDocWidget = new QDockWidget(tr("Console"), this);
-  consoleDocWidget->setObjectName("consoledocwidget");
+//  StreamBuffer* buffer = new StreamBuffer;
+//  auto tclConsole = std::make_unique<FOEDAG::TclConsole>(
+//      m_interpreter->getInterp(), buffer->getStream());
+//  FOEDAG::TclConsole* c = tclConsole.get();
+//  TclConsoleWidget* console{nullptr};
+//  QWidget* w =
+//      FOEDAG::createConsole(m_interpreter->getInterp(), std::move(tclConsole),
+//                            buffer, nullptr, &console);
+//  QDockWidget* consoleDocWidget = new QDockWidget(tr("Console"), this);
+//  consoleDocWidget->setWidget(w);
+//  connect(console, &TclConsoleWidget::linkActivated, textEditor,
+//          &TextEditor::SlotOpenFile);
+//  console->addParser(new DummyParser{});
 
-  StreamBuffer* buffer = new StreamBuffer;
-  auto tclConsole = std::make_unique<FOEDAG::TclConsole>(
-      m_interpreter->getInterp(), buffer->getStream());
-  FOEDAG::TclConsole* c = tclConsole.get();
-  TclConsoleWidget* console{nullptr};
-  QWidget* w =
-      FOEDAG::createConsole(m_interpreter->getInterp(), std::move(tclConsole),
-                            buffer, nullptr, &console);
-  consoleDocWidget->setWidget(w);
-  connect(console, &TclConsoleWidget::linkActivated, textEditor,
-          &TextEditor::SlotOpenFile);
-  console->addParser(new DummyParser{});
+//  // Register fake compiler until openFPGA gets available
+//  std::string design("Some cool design");
+//  FOEDAG::Compiler* com = new FOEDAG::Compiler{
+//      m_interpreter, new FOEDAG::Design(design), buffer->getStream(),
+//      new FOEDAG::CompilerNotifier{c}};
+//  com->RegisterCommands(m_interpreter, false);
+//  console->registerCommands(m_interpreter->getInterp());
 
-  // Register fake compiler until openFPGA gets available
-  std::string design("Some cool design");
-  FOEDAG::Compiler* com = new FOEDAG::Compiler{
-      m_interpreter, new FOEDAG::Design(design), buffer->getStream(),
-      new FOEDAG::CompilerNotifier{c}};
-  com->RegisterCommands(m_interpreter, false);
-
-  addDockWidget(Qt::BottomDockWidgetArea, consoleDocWidget);
-  tabifyDockWidget(consoleDocWidget, runDockWidget);
+//  addDockWidget(Qt::BottomDockWidgetArea, consoleDocWidget);
 }
 
 void MainWindow::clearDockWidgets() {

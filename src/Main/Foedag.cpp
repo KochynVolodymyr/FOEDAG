@@ -50,6 +50,9 @@ extern "C" {
 #include "MainWindow/main_window.h"
 #include "Tcl/TclInterpreter.h"
 #include "qttclnotifier.hpp"
+#include "PluginManager.h"
+#include <QDir>
+#include <QDebug>
 
 using namespace FOEDAG;
 
@@ -61,6 +64,9 @@ bool Foedag::initGui() {
       new FOEDAG::TclInterpreter(m_cmdLine->Argv()[0]);
   FOEDAG::CommandStack* commands = new FOEDAG::CommandStack(interpreter);
   QWidget* mainWin = nullptr;
+  QDir path = QCoreApplication::applicationDirPath();
+  path.cd("../plugins");
+  PluginManager::instance().load(path.path(), path.entryList(QDir::Files));
   if (m_mainWinBuilder) {
     mainWin = m_mainWinBuilder(m_cmdLine, interpreter);
   }
@@ -86,6 +92,10 @@ bool Foedag::initGui() {
 
   // Tcl_AppInit
   auto tcl_init = [](Tcl_Interp* interp) -> int {
+    QDir path = QCoreApplication::applicationDirPath();
+    path.cd("../plugins");
+    PluginManager::instance().load(path.path(), path.entryList(QDir::Files));
+
     // --script <script>
     if (!GlobalSession->CmdLine()->Script().empty()) {
       Tcl_EvalFile(interp, GlobalSession->CmdLine()->Script().c_str());
@@ -101,6 +111,7 @@ bool Foedag::initGui() {
     } else {
       Tcl_EvalEx(interp, "gui_start", -1, 0);
     }
+
     return 0;
   };
 

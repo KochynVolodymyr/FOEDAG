@@ -69,6 +69,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_subdirectory(third_party/tcl_cmake EXCLUDE_FROM_ALL)
+add_subdirectory(third_party/tcl_cmake_shared EXCLUDE_FROM_ALL)
 add_subdirectory(third_party/googletest EXCLUDE_FROM_ALL)
 add_subdirectory(third_party/QScintilla-2.13.1)
 add_subdirectory(third_party/QConsole)
@@ -172,7 +173,7 @@ else()
 endif()
 set_target_properties(foedag-bin PROPERTIES OUTPUT_NAME foedag)
 
-set(TCL_STATIC_LIB libtcl9.0.a)
+#set(TCL_STATIC_LIB libtcl9.0.a)
 set(TCL_STUBB_LIB libtclstub9.0.a)
 set(ZLIB_STATIC_LIB libz.a)
 if (MSVC)
@@ -181,9 +182,13 @@ if (MSVC)
   set(ZLIB_STATIC_LIB zlib.lib)
 endif()
 
-add_library(tcl_static STATIC IMPORTED)
-set_target_properties(tcl_static PROPERTIES
-  IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/lib/${TCL_STATIC_LIB})
+#add_library(tcl_static STATIC IMPORTED)
+#set_target_properties(tcl_static PROPERTIES
+#  IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/lib/${TCL_STATIC_LIB})
+
+add_library(tcl_shared SHARED IMPORTED)
+set_target_properties(tcl_shared PROPERTIES
+  IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/lib/libtcl9.0.so)
 
 add_library(tcl_stubb STATIC IMPORTED)
 set_target_properties(tcl_stubb PROPERTIES
@@ -222,16 +227,18 @@ add_custom_command(TARGET foedag POST_BUILD
 add_dependencies(foedag foedagcore)
 add_dependencies(compiler tcl_stubb_build)
 add_dependencies(foedagcore tcl_stubb_build)
-add_dependencies(console tcl_stubb_build)
+add_dependencies(console tcl_stubb_build tcl_stubb_build_shared)
+add_dependencies(tcl_stubb_build #[[tcl_build]] tcl_build_shared)
+#add_dependencies(tcl_build tcl_build_shared)
+add_dependencies(console QConsole tcl_build_shared)
 add_dependencies(newproject tcl_stubb_build)
-add_dependencies(tcl_stubb_build tcl_build)
-add_dependencies(console QConsole)
 if(MSVC)
 else()
-  add_dependencies(tcl_build zlib_build)
+#  add_dependencies(tcl_build zlib_build)
+add_dependencies(tcl_build_shared zlib_build)
 endif()
 add_dependencies(foedagcore qscintilla2_qt)
-add_dependencies(texteditor qscintilla2_qt tcl_build)
+add_dependencies(texteditor qscintilla2_qt #[[tcl_build]] tcl_build_shared)
 
 
 if (APPLE)
@@ -257,8 +264,11 @@ if(MSVC OR WIN32)
   set_target_properties(foedag-bin PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 endif()
 
-target_link_libraries(foedag-bin PUBLIC foedag tcl_stubb tcl_static zlib)
-target_link_libraries(foedag  PUBLIC tcl_stubb tcl_static zlib)
+message(${CMAKE_CURRENT_BINARY_DIR}/lib)
+target_link_libraries(foedag-bin foedag tcl_stubb #[[tcl_static]] #[[zlib]] -ltcl9.0)
+target_link_directories(foedag-bin PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/lib)
+target_link_directories(foedag PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/lib)
+target_link_libraries(foedag  PUBLIC tcl_stubb #[[tcl_static]] #[[zlib]] -ltcl9.0)
 target_link_libraries(foedag  PUBLIC foedagcore newproject newfile projnavigator designruns texteditor qscintilla2_qt compiler console QConsole)
 target_link_libraries(foedag  PUBLIC Qt5::Widgets Qt5::Core Qt5::Gui)
 
@@ -356,9 +366,9 @@ install(
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/foedag
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/foedag)
 
-install (
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/${TCL_STATIC_LIB}
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/foedag/lib)
+#install (
+#  FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/${TCL_STATIC_LIB}
+#  DESTINATION ${CMAKE_INSTALL_LIBDIR}/foedag/lib)
 install (
   FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/${TCL_STUBB_LIB}
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/foedag/lib)

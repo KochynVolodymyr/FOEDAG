@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Main/Foedag.h"
 #include "MainWindow/Session.h"
 #include "MainWindow/main_window.h"
+#include "Main/PluginManager.h"
 
 FOEDAG::Session* GlobalSession;
 

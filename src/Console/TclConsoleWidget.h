@@ -1,3 +1,23 @@
+/*
+Copyright 2021 The Foedag team
+
+GPL License
+
+Copyright (c) 2021 The Open-Source FPGA Foundation
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #pragma once
 
 #include <QPlainTextEdit>
@@ -18,10 +38,11 @@ enum class State {
 };
 
 class StreamBuffer;
+class TclInterpreter;
 class TclConsoleWidget : public QConsole {
   Q_OBJECT
  public:
-  explicit TclConsoleWidget(TclInterp *interp,
+  explicit TclConsoleWidget(TclInterpreter *interp,
                             std::unique_ptr<ConsoleInterface> iConsole,
                             StreamBuffer *buffer, QWidget *parent = nullptr);
   bool isRunning() const override;
@@ -39,6 +60,7 @@ class TclConsoleWidget : public QConsole {
    * \brief addParser. Add parser to the list and take ownership of the pointer
    */
   void addParser(LineParser *parser);
+  void registerCommands(TclInterp *interp);
 
  public slots:
   void clearText();
@@ -47,6 +69,7 @@ class TclConsoleWidget : public QConsole {
   void searchEnable();
   void stateChanged(FOEDAG::State);
   void linkActivated(const QString &);
+  void sendCommand(const QString &);
 
  protected:
   QString interpretCommand(const QString &command, int *res) override;
@@ -65,7 +88,6 @@ class TclConsoleWidget : public QConsole {
  private:
   void setState(const State &state);
   void handleLink(const QPoint &p);
-  void registerCommands(TclInterp *interp);
   bool hasPrompt() const;
   bool handleCommandFromHistory(const QString &command,
                                 QString &commandFromHist);
@@ -81,6 +103,7 @@ class TclConsoleWidget : public QConsole {
   bool m_linkActivated{true};
   Qt::MouseButton m_mouseButtonPressed{Qt::NoButton};
   OutputFormatter m_formatter;
+  TclInterpreter *m_interp;
 };
 
 }  // namespace FOEDAG

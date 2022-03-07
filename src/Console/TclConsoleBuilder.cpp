@@ -2,7 +2,7 @@
 
 namespace FOEDAG {
 
-QWidget *createConsole(TclInterp *interp,
+QWidget *createConsole(TclInterpreter *interp,
                        std::unique_ptr<ConsoleInterface> iConsole,
                        StreamBuffer *buffer, QWidget *parent,
                        TclConsoleWidget **consolePtr) {

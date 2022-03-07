@@ -28,7 +28,7 @@ QWidget* mainWindowBuilder(FOEDAG::CommandLine* cmd,
   Q_UNUSED(cmd)
   FOEDAG::TclConsoleWidget* console{nullptr};
   auto buffer = new FOEDAG::StreamBuffer;
-  auto w = FOEDAG::createConsole(interp->getInterp(),
+  auto w = FOEDAG::createConsole(interp,
                                  std::make_unique<FOEDAG::TclConsole>(
                                      interp->getInterp(), buffer->getStream()),
                                  buffer, nullptr, &console);

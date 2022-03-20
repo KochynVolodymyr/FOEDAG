@@ -382,7 +382,7 @@ jobs:
         where python && python --version
         where ninja && ninja --version
 
-        make release VERBOSE=1 CPU_CORES=1
+        make release CPU_CORES=1
         if %errorlevel% neq 0 exit /b %errorlevel%
         make install
         if %errorlevel% neq 0 exit /b %errorlevel%

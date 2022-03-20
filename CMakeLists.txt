@@ -41,7 +41,7 @@ option(
 
 project(FOEDAG)
 
-# Check system 
+# Check system
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
 # Find Qt packages and error out if not found
@@ -143,14 +143,14 @@ endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/include/)
 
-set(QRC_MAIN_WINDOW 
-	src/MainWindow/main_window_resource.qrc
+set(QRC_MAIN_WINDOW
+  src/MainWindow/main_window_resource.qrc
         src/MainWindow/qml.qrc
-	${PROJECT_SOURCE_DIR}/src/NewProject/newproject.qrc)
+  ${PROJECT_SOURCE_DIR}/src/NewProject/newproject.qrc)
 
 # Put source code here, files that are generated at build time in
 # foedag_generated_SRC
-set(foedag_SRC  
+set(foedag_SRC
   ${QRC_MAIN_WINDOW}
 )
 
@@ -174,13 +174,11 @@ set_target_properties(foedag-bin PROPERTIES OUTPUT_NAME foedag)
 
 set(TCL_STATIC_LIB libtcl8.6.so)
 set(TCL_STUBB_LIB libtclstub8.6.a)
-set(ZLIB_STATIC_LIB libz.a)
+set(ZLIB_STATIC_LIB libz.so)
 if (MSVC)
-  set(TCL_STUBB_LIB tclstub86.lib)
-  set(TCL_STATIC_LIB tcl86s.dll)
-  set(ZLIB_STATIC_LIB zlib.lib)
-elseif(APPLE) 
-  set(TCL_STATIC_LIB libtcl8.6.dylib)
+  set(TCL_STUBB_LIB tclstub86.dll)
+  set(TCL_STATIC_LIB tcl96.dll)
+  set(ZLIB_STATIC_LIB zlib.dll)
 endif()
 
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib/)
@@ -215,14 +213,14 @@ if(MSVC)
   target_link_libraries(foedag  PUBLIC Netapi32)
 
 else()
-  add_library(zlib STATIC IMPORTED)
+  add_library(zlib SHARED IMPORTED GLOBAL)
   set_target_properties(zlib PROPERTIES
-    IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/lib/${ZLIB_STATIC_LIB})       
+    IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/lib/${ZLIB_STATIC_LIB})
 endif()
 
 # Copy the init.tcl file from source to build directory
 add_custom_command(TARGET foedag POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy 
+  COMMAND ${CMAKE_COMMAND} -E copy
           ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tcl/library/init.tcl
           ${CMAKE_CURRENT_BINARY_DIR}/lib/tcl8.6/init.tcl)
 
@@ -367,7 +365,7 @@ install(
   TARGETS foedag-bin
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(
-  TARGETS foedag 
+  TARGETS foedag
   EXPORT Foedag
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/foedag
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/foedag)
@@ -380,9 +378,9 @@ install (
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/foedag/lib)
 install (
   FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/${ZLIB_STATIC_LIB}
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/foedag/lib)  
-  
-  
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/foedag/lib)
+
+
 if (WIN32 AND $<CONFIG:Debug>)
   if (FOEDAG_WITH_PYTHON)
     install(

@@ -294,8 +294,16 @@ QString ProjectManager::getProjectName() const {
   return Project::Instance()->projectName();
 }
 
+std::string ProjectManager::projectName() const {
+  return Project::Instance()->projectName().toStdString();
+}
+
 QString ProjectManager::getProjectPath() const {
   return Project::Instance()->projectPath();
+}
+
+bool ProjectManager::hasActiveDesign() const {
+  return !Project::Instance()->projectName().isEmpty();
 }
 
 int ProjectManager::setProjectType(const QString& strType) {
@@ -608,6 +616,10 @@ QString ProjectManager::getDesignTopModule(const QString& strFileSet) const {
     strTopModule = tmpFileSet->getOption(PROJECT_FILE_CONFIG_TOP);
   }
   return strTopModule;
+}
+
+QString ProjectManager::getDesignTopModule() const {
+  return getDesignTopModule(getDesignActiveFileSet());
 }
 
 int ProjectManager::setConstrFileSet(const QString& strSetName) {

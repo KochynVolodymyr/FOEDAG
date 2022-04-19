@@ -120,7 +120,9 @@ class ProjectManager : public QObject {
   int CreateProject(const QString &strName, const QString &strPath,
                     const QString &designSource = DEFAULT_FOLDER_SOURCE);
   QString getProjectName() const;
+  std::string projectName() const;
   QString getProjectPath() const;
+  bool hasActiveDesign() const;
 
   int setProjectType(const QString &strType);
 
@@ -144,6 +146,7 @@ class ProjectManager : public QObject {
   int setDesignActive(const QString &strSetName);
   QStringList getDesignFiles(const QString &strFileSet) const;
   QString getDesignTopModule(const QString &strFileSet) const;
+  QString getDesignTopModule() const;
 
   int setConstrFileSet(const QString &strSetName);
   QStringList getConstrFileSets() const;

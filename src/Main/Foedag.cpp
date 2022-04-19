@@ -329,6 +329,9 @@ bool Foedag::initBatch() {
   if (m_registerTclFunc) {
     m_registerTclFunc(nullptr, GlobalSession);
   }
+  std::string result = interpreter->evalCmd("puts \"Tcl only mode\"");
+  m_compiler->setProjectManager(new ProjectManager);
+
   // Tcl_AppInit
   auto tcl_init = [](Tcl_Interp* interp) -> int {
     // --script <script>

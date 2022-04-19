@@ -36,6 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Compiler/CompilerOpenFPGA.h"
 #include "Compiler/Constraints.h"
+#include "NewProject/ProjectManager/project_manager.h"
 
 using namespace FOEDAG;
 
@@ -214,21 +215,20 @@ bool CompilerOpenFPGA::RegisterCommands(TclInterpreter* interp,
 }
 
 bool CompilerOpenFPGA::IPGenerate() {
-  if ((m_design == nullptr) && !CreateDesign("noname")) return false;
-  (*m_out) << "IP generation for design: " << m_design->Name() << "..."
-           << std::endl;
+  if (!HasActiveDesign() && !CreateDesign("noname")) return false;
+  (*m_out) << "IP generation for design: " << m_projectManager->projectName()
+           << "..." << std::endl;
 
-  (*m_out) << "Design " << m_design->Name() << " IPs are generated!"
-           << std::endl;
+  (*m_out) << "Design " << m_projectManager->projectName()
+           << " IPs are generated!" << std::endl;
   m_state = IPGenerated;
   return true;
 }
 
 bool CompilerOpenFPGA::Synthesize() {
-  if ((m_design == nullptr) && !CreateDesign("noname")) return false;
-  (*m_out) << "Synthesizing design: " << m_design->Name() << "..." << std::endl;
-
-  std::ofstream ofssdc(std::string(m_design->Name() + "_openfpga.sdc"));
+  if (!HasActiveDesign() && !CreateDesign("noname")) return false;
+  (*m_out) << "Synthesizing design: " << m_projectManager->projectName()
+           << "..." << std::endl;
   for (auto constraint : m_constraints->getConstraints()) {
     (*m_out) << "Constraint: " << constraint << "\n";
     // TODO: Massage the SDC so VPR can understand them
@@ -247,6 +247,11 @@ bool CompilerOpenFPGA::Synthesize() {
 
   if (m_yosysScript.empty()) {
     m_yosysScript = basicYosysScript;
+  }
+  std::string fileList;
+  for (const auto& file : m_projectManager->getDesignFiles(
+           m_projectManager->getDesignActiveFileSet())) {
+    fileList += file.toStdString() + " ";
   }
   std::string yosysScript = m_yosysScript;
 
@@ -355,10 +360,14 @@ bool CompilerOpenFPGA::Synthesize() {
 
   yosysScript = replaceAll(yosysScript, "${KEEP_NAMES}", keeps);
   yosysScript = replaceAll(yosysScript, "${LUT_SIZE}", std::to_string(6));
-  yosysScript = replaceAll(yosysScript, "${TOP_MODULE}", m_design->TopLevel());
-  yosysScript = replaceAll(yosysScript, "${OUTPUT_BLIF}",
-                           std::string(m_design->Name() + "_post_synth.blif"));
-  std::ofstream ofs(std::string(m_design->Name() + ".ys"));
+  yosysScript = replaceAll(yosysScript, "${VERILOG_FILES}", fileList);
+  yosysScript =
+      replaceAll(yosysScript, "${TOP_MODULE}",
+                 m_projectManager->getDesignTopModule().toStdString());
+  yosysScript = replaceAll(
+      yosysScript, "${OUTPUT_BLIF}",
+      std::string(m_projectManager->projectName() + "_post_synth.blif"));
+  std::ofstream ofs(std::string(m_projectManager->projectName() + ".ys"));
   ofs << yosysScript;
   ofs.close();
   if (!fileExists(m_yosysExecutablePath)) {
@@ -366,11 +375,12 @@ bool CompilerOpenFPGA::Synthesize() {
     return false;
   }
   std::string command = m_yosysExecutablePath.string() + " -s " +
-                        std::string(m_design->Name() + ".ys");
+                        std::string(m_projectManager->projectName() + ".ys");
   (*m_out) << "Synthesis command: " << command << std::endl;
-  int status = ExecuteAndMonitorSystemCommand(command);
-  if (status) {
-    ErrorMessage("Design " + m_design->Name() + " synthesis failed!");
+  bool status = ExecuteAndMonitorSystemCommand(command);
+  if (status == false) {
+    (*m_out) << "Design " << m_projectManager->projectName()
+             << " synthesis was interrupted!" << std::endl;
     return false;
   } else {
     m_state = State::Synthesized;
@@ -378,6 +388,10 @@ bool CompilerOpenFPGA::Synthesize() {
              << std::endl;
     return true;
   }
+  m_state = State::Synthesized;
+  (*m_out) << "Design " << m_projectManager->projectName() << " is synthesized!"
+           << std::endl;
+  return true;
 }
 
 std::string CompilerOpenFPGA::getBaseVprCommand() {
@@ -393,7 +407,7 @@ std::string CompilerOpenFPGA::getBaseVprCommand() {
 }
 
 bool CompilerOpenFPGA::Packing() {
-  if (m_design == nullptr) {
+  if (!HasActiveDesign()) {
     ErrorMessage("No design specified");
     return false;
   }
@@ -408,13 +422,14 @@ bool CompilerOpenFPGA::Packing() {
     return false;
   }
   m_state = State::Packed;
-  (*m_out) << "Design " << m_design->Name() << " is packed!" << std::endl;
+  (*m_out) << "Design " << m_projectManager->projectName() << " is packed!"
+           << std::endl;
 
   return true;
 }
 
 bool CompilerOpenFPGA::GlobalPlacement() {
-  if (m_design == nullptr) {
+  if (!HasActiveDesign()) {
     ErrorMessage("No design specified");
     return false;
   }
@@ -423,17 +438,17 @@ bool CompilerOpenFPGA::GlobalPlacement() {
     ErrorMessage("Design needs to be in packed state");
     return false;
   }
-  (*m_out) << "Global Placement for design: " << m_design->Name() << "..."
-           << std::endl;
+  (*m_out) << "Global Placement for design: " << m_projectManager->projectName()
+           << "..." << std::endl;
   // TODO:
   m_state = State::GloballyPlaced;
-  (*m_out) << "Design " << m_design->Name() << " is globally placed!"
-           << std::endl;
+  (*m_out) << "Design " << m_projectManager->projectName()
+           << " is globally placed!" << std::endl;
   return true;
 }
 
 bool CompilerOpenFPGA::Placement() {
-  if (m_design == nullptr) {
+  if (!HasActiveDesign()) {
     ErrorMessage("No design specified");
     return false;
   }
@@ -455,13 +470,14 @@ bool CompilerOpenFPGA::Placement() {
     return false;
   }
   m_state = State::Placed;
-  (*m_out) << "Design " << m_design->Name() << " is placed!" << std::endl;
+  (*m_out) << "Design " << m_projectManager->projectName() << " is placed!"
+           << std::endl;
 
   return true;
 }
 
 bool CompilerOpenFPGA::Route() {
-  if (m_design == nullptr) {
+  if (!HasActiveDesign()) {
     ErrorMessage("No design specified");
     return false;
   }
@@ -481,13 +497,14 @@ bool CompilerOpenFPGA::Route() {
     return false;
   }
   m_state = State::Routed;
-  (*m_out) << "Design " << m_design->Name() << " is routed!" << std::endl;
+  (*m_out) << "Design " << m_projectManager->projectName() << " is routed!"
+           << std::endl;
 
   return true;
 }
 
 bool CompilerOpenFPGA::TimingAnalysis() {
-  if (m_design == nullptr) {
+  if (!HasActiveDesign()) {
     ErrorMessage("No design specified");
     return false;
   }
@@ -505,18 +522,20 @@ bool CompilerOpenFPGA::TimingAnalysis() {
     return false;
   }
 
-  (*m_out) << "Design " << m_design->Name() << " is analysed!" << std::endl;
+  (*m_out) << "Design " << m_projectManager->projectName() << " is analysed!"
+           << std::endl;
 
   return true;
 }
 
 bool CompilerOpenFPGA::PowerAnalysis() {
-  if (m_design == nullptr) {
+  if (!HasActiveDesign()) {
     ErrorMessage("No design specified");
     return false;
   }
 
-  (*m_out) << "Analysis for design: " << m_design->Name() << "..." << std::endl;
+  (*m_out) << "Analysis for design: " << m_projectManager->projectName()
+           << "..." << std::endl;
   std::string command = getBaseVprCommand() + " --analysis";
   if (!fileExists(m_vprExecutablePath)) {
     ErrorMessage("Cannot find executable: " + m_vprExecutablePath.string());
@@ -528,12 +547,13 @@ bool CompilerOpenFPGA::PowerAnalysis() {
     return false;
   }
 
-  (*m_out) << "Design " << m_design->Name() << " is analysed!" << std::endl;
+  (*m_out) << "Design " << m_projectManager->projectName() << " is analysed!"
+           << std::endl;
   return true;
 }
 
 bool CompilerOpenFPGA::GenerateBitstream() {
-  if (m_design == nullptr) {
+  if (!HasActiveDesign()) {
     ErrorMessage("No design specified");
     return false;
   }
@@ -542,9 +562,9 @@ bool CompilerOpenFPGA::GenerateBitstream() {
     return false;
   }
   // TODO:
-  (*m_out) << "Bitstream generation for design: " << m_design->Name() << "..."
-           << std::endl;
-  (*m_out) << "Design " << m_design->Name() << " bitstream is generated!"
-           << std::endl;
+  (*m_out) << "Bitstream generation for design: "
+           << m_projectManager->projectName() << "..." << std::endl;
+  (*m_out) << "Design " << m_projectManager->projectName()
+           << " bitstream is generated!" << std::endl;
   return true;
 }

@@ -49,6 +49,7 @@ class Design {
     SYSTEMVERILOG_2012,
     SYSTEMVERILOG_2017,
   };
+  static std::string toString(Language lang);
   Design(const std::string& designName) : m_designName(designName) {}
   ~Design();
 

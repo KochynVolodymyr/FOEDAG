@@ -42,6 +42,7 @@ class Session;
 class DesignManager;
 class TclCommandIntegration;
 class Constraints;
+class ProjectManager;
 class Compiler {
  public:
   enum Action {
@@ -88,10 +89,7 @@ class Compiler {
   bool Compile(Action action);
   void Stop();
   TclInterpreter* TclInterp() { return m_interp; }
-  Design* GetActiveDesign() const;
-  Design* GetDesign(const std::string name);
-  void SetDesign(Design* design);
-  bool SetActiveDesign(const std::string& name);
+  bool HasActiveDesign() const;
   virtual bool RegisterCommands(TclInterpreter* interp, bool batchMode);
   bool Clear();
   void start();
@@ -107,6 +105,9 @@ class Compiler {
   virtual void ErrorMessage(const std::string& message);
   void SetUseVerific(bool on) { m_useVerific = on; }
   void SetHardError(bool on) { m_hardError = on; }
+
+  ProjectManager* projectManager() const;
+  void setProjectManager(ProjectManager* newProjectManager);
 
  protected:
   /* Methods that can be customized for each new compiler flow */
@@ -133,7 +134,6 @@ class Compiler {
   /* Propected members */
   TclInterpreter* m_interp = nullptr;
   Session* m_session = nullptr;
-  Design* m_design = nullptr;
   bool m_stop = false;
   State m_state = None;
   std::ostream* m_out = &std::cout;
@@ -142,10 +142,9 @@ class Compiler {
   std::string m_result;
   TclInterpreterHandler* m_tclInterpreterHandler{nullptr};
   TaskManager* m_taskManager{nullptr};
-  std::vector<Design*> m_designs;
   TclCommandIntegration* m_tclCmdIntegration{nullptr};
   Constraints* m_constraints = nullptr;
-  std::string m_output;
+  ProjectManager* m_projectManager{nullptr};
   bool m_useVerific = false;
   bool m_hardError = false;
 };

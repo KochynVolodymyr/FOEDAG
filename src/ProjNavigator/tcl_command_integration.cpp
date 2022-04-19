@@ -40,7 +40,7 @@ bool TclCommandIntegration::TclSetTopModule(int argc, const char *argv[],
     return false;
   }
 
-  QString strSetName{"ds"};
+  QString strSetName{m_projManager->getDesignActiveFileSet()};
 
   QString strFileName = QString(argv[1]);
   m_projManager->setCurrentFileSet(strSetName);
@@ -102,6 +102,54 @@ bool TclCommandIntegration::TclAddOrCreateFiles(int argc, const char *argv[],
       out << "Failed to add file: " << strFileName.toStdString() << std::endl;
       return false;
     }
+  }
+
+  if (0 == ret) {
+    m_projManager->FinishedProject();
+    m_form->UpdateSrcHierachyTree();
+  }
+  return true;
+}
+
+bool TclCommandIntegration::TclAddOrCreateFiles(const QString &name,
+                                                std::ostream &out) {
+  if (!validate()) {
+    out << "Command validation fail: internal error" << std::endl;
+    return false;
+  }
+
+  QString strSetName = m_projManager->getDesignActiveFileSet();
+
+  m_projManager->setCurrentFileSet(strSetName);
+  int ret = m_projManager->setDesignFile(name, false);
+
+  if (0 != ret) {
+    out << "Failed to add file: " << name.toStdString() << std::endl;
+    return false;
+  }
+
+  if (0 == ret) {
+    m_projManager->FinishedProject();
+    m_form->UpdateSrcHierachyTree();
+  }
+  return true;
+}
+
+bool TclCommandIntegration::TclAddOrCreateConstraintFiles(const QString &name,
+                                                          std::ostream &out) {
+  if (!validate()) {
+    out << "Command validation fail: internal error" << std::endl;
+    return false;
+  }
+
+  QString strSetName = m_projManager->getConstrActiveFileSet();
+
+  int ret = 0;
+  m_projManager->setCurrentFileSet(strSetName);
+  ret = m_projManager->setConstrsFile(name, true);
+  if (0 != ret) {
+    out << "Failed to add file: " << name.toStdString() << std::endl;
+    return false;
   }
 
   if (0 == ret) {
@@ -191,5 +239,9 @@ void TclCommandIntegration::createNewDesign(const QString &projName) {
 }
 
 bool TclCommandIntegration::validate() const { return m_projManager && m_form; }
+
+ProjectManager *TclCommandIntegration::projManager() const {
+  return m_projManager;
+}
 
 }  // namespace FOEDAG

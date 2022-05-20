@@ -6,7 +6,6 @@
 
 #include "NewProject/ProjectManager/project_manager.h"
 #include "add_file_dialog.h"
-#include "create_fileset_dialog.h"
 
 #define SRC_TREE_DESIGN_TOP_ITEM "destopitem"
 #define SRC_TREE_CONSTR_TOP_ITEM "constrtopitem"
@@ -52,32 +51,22 @@ class SourcesForm : public QWidget {
 
   void SetCurrentFileItem(const QString& strFileName);
   void SlotRefreshSourceTree();
-  void SlotCreateDesignSet();
-  void SlotCreateConstrSet();
-  void SlotCreateSimSet();
   void SlotAddFile();
   void SlotOpenFile();
-  void SlotRemoveFileSet();
   void SlotRemoveFile();
   void SlotSetAsTop();
   void SlotSetAsTarget();
-  void SlotSetActive();
 
  private:
   Ui::SourcesForm* ui;
 
   QTreeWidget* m_treeSrcHierachy;
   QAction* m_actRefresh;
-  QAction* m_actEditDesignSets;
-  QAction* m_actEditConstrsSets;
-  QAction* m_actEditSimulSets;
   QAction* m_actAddFile;
   QAction* m_actOpenFile;
-  QAction* m_actRemoveFileset;
   QAction* m_actRemoveFile;
   QAction* m_actSetAsTop;
   QAction* m_actSetAsTarget;
-  QAction* m_actMakeActive;
 
   ProjectManager* m_projManager;
 

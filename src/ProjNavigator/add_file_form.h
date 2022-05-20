@@ -22,12 +22,8 @@ class AddFileForm : public QWidget {
 
   void InitForm(int itype);
 
-  QString getFileSet() const;
   QList<filedata> getFileData() const;
   bool IsCopySource() const;
-
- private slots:
-  void on_m_comboBoxSets_currentIndexChanged(const QString &arg1);
 
  private:
   Ui::AddFileForm *ui;
@@ -35,7 +31,6 @@ class AddFileForm : public QWidget {
   ProjectManager *m_pm;
 
   sourceGrid *m_widgetGrid;
-  void initSetComboBox(int itype);
 };
 }  // namespace FOEDAG
 #endif  // ADD_SIMULATION_FORM_H

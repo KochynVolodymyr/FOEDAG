@@ -43,7 +43,7 @@ void AddFileDialog::on_m_btnOK_clicked() {
   int ret = 0;
   int iType = m_selectForm->getSelectedType();
   if (m_formIndex == INDEX_FILEFORM) {
-    m_pm->setCurrentFileSet(m_fileForm->getFileSet());
+    m_pm->setCurrentFileSet(DEFAULT_FOLDER_SOURCE);
     QList<filedata> listFile = m_fileForm->getFileData();
     foreach (filedata fdata, listFile) {
       if ("<Local to Project>" == fdata.m_filePath) {

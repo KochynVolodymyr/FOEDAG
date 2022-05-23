@@ -3,6 +3,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 
+#include "ProjectManager/project_manager.h"
 #include "ui_create_file_dialog.h"
 
 using namespace FOEDAG;
@@ -21,7 +22,7 @@ createFileDialog::createFileDialog(QWidget *parent)
   ui->m_pushBtnOK->setText(tr("OK"));
   ui->m_pushBtnCancel->setText(tr("Cancel"));
   ui->m_comboxFileLocation->clear();
-  ui->m_comboxFileLocation->insertItem(0, tr("<Local to Project>"));
+  ui->m_comboxFileLocation->insertItem(0, tr(LOCAL_TO_PROJECT));
   ui->m_comboxFileLocation->insertItem(1, tr("Choose Location..."));
   ui->m_comboxFileLocation->setStyleSheet("border: 1px solid gray;");
 }

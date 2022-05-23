@@ -37,7 +37,7 @@ void ProjectManager::CreateProject(const ProjectOptions& opt) {
   QString strDefaultSrc;
   QList<filedata> listFile = opt.sourceFileData.fileData;
   foreach (filedata fdata, listFile) {
-    if ("<Local to Project>" == fdata.m_filePath) {
+    if (LOCAL_TO_PROJECT == fdata.m_filePath) {
       setDesignFile(fdata.m_fileName, false);
     } else {
       setDesignFile(fdata.m_filePath + "/" + fdata.m_fileName,
@@ -63,7 +63,7 @@ void ProjectManager::CreateProject(const ProjectOptions& opt) {
   listFile.clear();
   listFile = opt.constrFileData.fileData;
   foreach (filedata fdata, listFile) {
-    if ("<Local to Project>" == fdata.m_filePath) {
+    if (LOCAL_TO_PROJECT == fdata.m_filePath) {
       setConstrsFile(fdata.m_fileName, false);
     } else {
       setConstrsFile(fdata.m_filePath + "/" + fdata.m_fileName,
@@ -380,12 +380,8 @@ int ProjectManager::setDesignFile(const QString& strFileName, bool isFileCopy) {
         }
       }
     } else {
-      QString filePath = Project::Instance()->projectPath() + "/" +
-                         Project::Instance()->projectName() + ".srcs/" +
-                         m_currentFileSet + "/" + strFileName;
-      QString fileSetPath = PROJECT_OSRCDIR;
-      fileSetPath += "/" + Project::Instance()->projectName() + ".srcs/" +
-                     m_currentFileSet + "/" + strFileName;
+      QString filePath = Project::Instance()->projectPath() + "/" + strFileName;
+      QString fileSetPath = QString("%1/%2").arg(PROJECT_OSRCDIR, strFileName);
       if (!suffix.compare("v", Qt::CaseInsensitive)) {
         ret = CreateVerilogFile(filePath);
         if (0 == ret) {
@@ -1690,8 +1686,7 @@ int ProjectManager::AddOrCreateFileToFileSet(const QString& strFileName,
   QFileInfo fileInfo(strFileName);
   QString fname = fileInfo.fileName();
   if (isFileCopy) {
-    QString filePath = "/" + Project::Instance()->projectName() + ".srcs/" +
-                       m_currentFileSet + "/" + fname;
+    QString filePath = QString("/%1").arg(fname);
     QString destinDir = Project::Instance()->projectPath() + filePath;
     if (CopyFileToPath(strFileName, destinDir)) {
       proFileSet->addFile(fname, PROJECT_OSRCDIR + filePath);

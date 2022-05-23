@@ -46,7 +46,7 @@ void AddFileDialog::on_m_btnOK_clicked() {
     m_pm->setCurrentFileSet(DEFAULT_FOLDER_SOURCE);
     QList<filedata> listFile = m_fileForm->getFileData();
     foreach (filedata fdata, listFile) {
-      if ("<Local to Project>" == fdata.m_filePath) {
+      if (LOCAL_TO_PROJECT == fdata.m_filePath) {
         if (GT_SOURCE == iType) {
           ret = m_pm->setDesignFile(fdata.m_fileName, false);
         } else if (GT_CONSTRAINTS == iType) {

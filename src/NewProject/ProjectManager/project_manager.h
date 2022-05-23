@@ -88,6 +88,8 @@ project object is singleton mode.
 
 #define PROJECT_OSRCDIR "$OSRCDIR"
 
+#define LOCAL_TO_PROJECT "<Local to Project>"
+
 namespace FOEDAG {
 
 struct ProjectOptions {

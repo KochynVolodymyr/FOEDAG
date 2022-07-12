@@ -87,24 +87,34 @@ test/regression: run-cmake-release
 
 test/valgrind: run-cmake-debug
 	valgrind --tool=memcheck --log-file=valgrind.log dbuild/bin/foedag --batch --script tests/TestBatch/hello.tcl ; 
+	cat valgrind.log
 	grep "ERROR SUMMARY: 0" valgrind.log
 	$(XVFB) valgrind --tool=memcheck --log-file=valgrind_gui.log dbuild/bin/foedag --replay tests/TestGui/gui_start_stop.tcl;
+	cat valgrind_gui.log
 	grep "ERROR SUMMARY: 0" valgrind_gui.log 
 	$(XVFB) valgrind --tool=memcheck --log-file=valgrind_gui.log dbuild/bin/newproject --replay tests/TestGui/gui_new_project.tcl
+	cat valgrind_gui.log
 	grep "ERROR SUMMARY: 0" valgrind_gui.log
 	$(XVFB) valgrind --tool=memcheck --log-file=valgrind_gui.log dbuild/bin/projnavigator --replay tests/TestGui/gui_project_navigator.tcl
+	cat valgrind_gui.log
 	grep "ERROR SUMMARY: 0" valgrind_gui.log
-	$(XVFB) valgrind --tool=memcheck --log-file=valgrind_gui.log dbuild/bin/texteditor --replay tests/TestGui/gui_text_editor.tcl
-	grep "ERROR SUMMARY: 0" valgrind_gui.log
-	$(XVFB) valgrind --tool=memcheck --log-file=valgrind_gui.log dbuild/bin/newfile --replay tests/TestGui/gui_new_file.tcl
-	grep "ERROR SUMMARY: 0" valgrind_gui.log
+	$(XVFB) valgrind --tool=memcheck --log-file=valgrind_gui.log --track-origins=yes --leak-check=full  dbuild/bin/texteditor --replay tests/TestGui/gui_text_editor.tcl
+	cat valgrind_gui.log
+	- grep "ERROR SUMMARY: 0" valgrind_gui.log
+	$(XVFB) valgrind --tool=memcheck --log-file=valgrind_gui.log --track-origins=yes --leak-check=full dbuild/bin/newfile --replay tests/TestGui/gui_new_file.tcl
+	cat valgrind_gui.log
+	- grep "ERROR SUMMARY: 0" valgrind_gui.log
 	$(XVFB) valgrind --tool=memcheck --log-file=valgrind_gui.log dbuild/bin/console_test --replay tests/TestGui/gui_console.tcl
+	cat valgrind_gui.log
 	grep "ERROR SUMMARY: 0" valgrind_gui.log
 	$(XVFB) valgrind --tool=memcheck --log-file=valgrind_gui.log dbuild/bin/foedag --replay tests/TestGui/gui_foedag.tcl
+	cat valgrind_gui.log
 	grep "ERROR SUMMARY: 0" valgrind_gui.log
 	$(XVFB) valgrind --tool=memcheck --log-file=valgrind_gui.log dbuild/bin/foedag --replay tests/TestGui/gui_task_dlg.tcl
+	cat valgrind_gui.log
 	grep "ERROR SUMMARY: 0" valgrind_gui.log
 	$(XVFB) valgrind --tool=memcheck --log-file=valgrind_gui.log dbuild/bin/foedag --replay tests/TestGui/gui_top_settings_dlg.tcl
+	cat valgrind_gui.log
 	grep "ERROR SUMMARY: 0" valgrind_gui.log
 
 test: test/unittest test/regression

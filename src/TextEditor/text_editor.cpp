@@ -61,6 +61,8 @@ TextEditor::TextEditor(QWidget* parent) : QWidget(parent) {
   TextEditorForm::Instance()->InitForm();
   connect(TextEditorForm::Instance(), SIGNAL(CurrentFileChanged(QString)), this,
           SLOT(SlotCurrentFileChanged(QString)));
+  connect(TextEditorForm::Instance(), SIGNAL(CurrentFileModified()), this,
+          SIGNAL(CurrentFileModified()));
 }
 
 void TextEditor::ShowTextEditor() { TextEditorForm::Instance()->show(); }

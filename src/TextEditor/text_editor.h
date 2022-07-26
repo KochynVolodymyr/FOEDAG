@@ -22,6 +22,7 @@ class TextEditor : public QWidget {
 
  signals:
   void CurrentFileChanged(QString);
+  void CurrentFileModified();
 
  public slots:
   void SlotOpenFile(const QString &strFileName);

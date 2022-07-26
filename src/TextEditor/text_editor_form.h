@@ -21,6 +21,7 @@ class TextEditorForm : public QWidget {
 
  signals:
   void CurrentFileChanged(QString);
+  void CurrentFileModified();
 
  private slots:
   void SlotTabCloseRequested(int index);

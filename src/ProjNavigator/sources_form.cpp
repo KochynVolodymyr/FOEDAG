@@ -21,11 +21,23 @@ SourcesForm::SourcesForm(QWidget *parent)
   m_treeSrcHierachy->setSelectionMode(
       QAbstractItemView::SelectionMode::SingleSelection);
 
+  m_treeModuleHierachy = new QTreeWidget(ui->m_tabHierarchy);
+  m_treeModuleHierachy->setSelectionMode(
+      QAbstractItemView::SelectionMode::SingleSelection);
+
   QVBoxLayout *vbox = new QVBoxLayout();
   vbox->addWidget(m_treeSrcHierachy);
   vbox->setContentsMargins(0, 0, 0, 0);
   vbox->setSpacing(0);
+  ui->m_tabOrder->setLayout(vbox);
+
+  vbox = new QVBoxLayout();
+  vbox->addWidget(m_treeModuleHierachy);
+  vbox->setContentsMargins(0, 0, 0, 0);
+  vbox->setSpacing(0);
   ui->m_tabHierarchy->setLayout(vbox);
+
+  ui->m_tabWidget->setCurrentIndex(0);
 
   CreateActions();
 
@@ -35,8 +47,6 @@ SourcesForm::SourcesForm(QWidget *parent)
           SLOT(SlotItempressed(QTreeWidgetItem *, int)));
   connect(m_treeSrcHierachy, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)),
           this, SLOT(SlotItemDoubleClicked(QTreeWidgetItem *, int)));
-
-  ui->m_tabWidget->removeTab(ui->m_tabWidget->indexOf(ui->tab_2));
 }
 
 SourcesForm::~SourcesForm() { delete ui; }
@@ -48,6 +58,8 @@ TclCommandIntegration *SourcesForm::createTclCommandIntegarion() {
 }
 
 ProjectManager *SourcesForm::ProjManager() { return m_projManager; }
+
+void SourcesForm::FileModified() { CreateModuleHierachyTree(); }
 
 void SourcesForm::SetCurrentFileItem(const QString &strFileName) {
   QString filename = strFileName.right(strFileName.size() -
@@ -430,6 +442,8 @@ void SourcesForm::UpdateSrcHierachyTree() {
   CreateFolderHierachyTree();
   m_treeSrcHierachy->setHeaderHidden(true);
   m_treeSrcHierachy->expandAll();
+
+  CreateModuleHierachyTree();
 }
 
 void SourcesForm::CreateFolderHierachyTree() {
@@ -448,42 +462,18 @@ void SourcesForm::CreateFolderHierachyTree() {
   int iFileSum = 0;
   for (auto &str : listDesFset) {
     QStringList listDesFile = m_projManager->getDesignFiles(str);
-    QString strTop = m_projManager->getDesignTopModule(str);
 
     QTreeWidgetItem *parentItem{topitemDS};
-    for (auto &strfile : listDesFile) {
-      QString filename =
-          strfile.right(strfile.size() - (strfile.lastIndexOf("/") + 1));
-      QString module = filename.left(filename.lastIndexOf("."));
-      if (module == strTop) {
-        if (parentItem) {
-          QString filename =
-              strfile.right(strfile.size() - (strfile.lastIndexOf("/") + 1));
-          QTreeWidgetItem *itemf = new QTreeWidgetItem(parentItem);
-          itemf->setText(0, filename + SRC_TREE_FLG_TOP);
-          itemf->setData(0, Qt::UserRole, strfile);
-          itemf->setIcon(0, QIcon(":/img/file.png"));
-          itemf->setData(0, Qt::WhatsThisPropertyRole,
-                         SRC_TREE_DESIGN_FILE_ITEM);
-          parentItem = itemf;
-        }
-        break;
-      }
-    }
     for (auto &strfile : listDesFile) {
       if (parentItem) {
         QString filename =
             strfile.right(strfile.size() - (strfile.lastIndexOf("/") + 1));
-        QString module = filename.left(filename.lastIndexOf("."));
-        if (module != strTop) {
-          QTreeWidgetItem *itemf = new QTreeWidgetItem(parentItem);
-          itemf->setText(0, filename);
-          itemf->setData(0, Qt::UserRole, strfile);
-          itemf->setIcon(0, QIcon(":/img/file.png"));
-          itemf->setData(0, Qt::WhatsThisPropertyRole,
-                         SRC_TREE_DESIGN_FILE_ITEM);
-          itemf->setData(0, SetFileDataRole, str);
-        }
+        QTreeWidgetItem *itemf = new QTreeWidgetItem(parentItem);
+        itemf->setText(0, filename);
+        itemf->setData(0, Qt::UserRole, strfile);
+        itemf->setIcon(0, QIcon(":/img/file.png"));
+        itemf->setData(0, Qt::WhatsThisPropertyRole, SRC_TREE_DESIGN_FILE_ITEM);
+        itemf->setData(0, SetFileDataRole, str);
       }
     }
     iFileSum += listDesFile.size();
@@ -554,6 +544,107 @@ void SourcesForm::CreateFolderHierachyTree() {
   }
   topitemSS->setText(0,
                      tr("Simulation Sources") + QString("(%1)").arg(iFileSum));
+}
+
+struct Module {
+  QString name;
+  QString content;
+  QString filename;
+  QVector<Module> subModules;
+  bool isSubmodule{false};
+  bool isTop{false};
+};
+
+void insertItem(QTreeWidgetItem *parent, const QVector<Module> &mods) {
+  QTreeWidgetItem *top{nullptr};
+  for (const auto &module : mods) {
+    if (parent) {
+      QTreeWidgetItem *itemf = new QTreeWidgetItem(parent);
+      if (module.isTop) {
+        top = itemf;
+        itemf->setText(0, QString("(Top) %1 (%2)").arg(module.name, module.filename));
+//        itemf->setIcon(0, QIcon(":/img/module.png")); TODO need icons
+      } else {
+        itemf->setText(0, QString("%1 (%2)").arg(module.name, module.filename));
+//        itemf->setIcon(0, QIcon(":/img/cubes.png")); TODO need icons
+      }
+      itemf->setData(0, Qt::WhatsThisPropertyRole, SRC_TREE_DESIGN_FILE_ITEM);
+      itemf->setToolTip(0, module.content);
+      insertItem(itemf, module.subModules);
+    }
+  }
+  if (top) {
+    top->parent()->takeChild(top->parent()->indexOfChild(top));
+    parent->insertChild(0, top);
+  }
+};
+
+void SourcesForm::CreateModuleHierachyTree() {
+  m_treeModuleHierachy->clear();
+
+  // add here
+  QTreeWidgetItem *topItem = new QTreeWidgetItem(m_treeModuleHierachy);
+  const QString topItemName = m_projManager->getProjectName().isEmpty()
+                                  ? "undefined"
+                                  : m_projManager->getProjectName();
+  topItem->setText(0, topItemName);
+  m_treeModuleHierachy->addTopLevelItem(topItem);
+
+  QTreeWidgetItem *topitemDS = new QTreeWidgetItem(topItem);
+  topitemDS->setData(0, Qt::WhatsThisPropertyRole, SRC_TREE_DESIGN_TOP_ITEM);
+
+//  QStringList listDesFset = m_projManager->getDesignFileSets();
+
+//  QString top;
+//  QVector<Module> allMods;
+//  for (auto &str : listDesFset) {
+//    QStringList listDesFile = m_projManager->getDesignFiles(str);
+//    top = m_projManager->getDesignTopModule(str);
+
+//    for (auto &strfile : listDesFile) {
+//      QString file = strfile;
+//      file.replace(PROJECT_OSRCDIR, Project::Instance()->projectPath());
+//      QFile f{file};
+//      f.open(QFile::ReadOnly);
+//      auto mods = modules(f.readAll());
+//      QString filename =
+//          strfile.right(strfile.size() - (strfile.lastIndexOf("/") + 1));
+//      for (auto &m : mods) {
+//        m.filename = filename;
+//        allMods.append(m);
+//      }
+//    }
+//  }
+
+//  for (auto &mod : allMods) {
+//    if (mod.name == top) {
+//      mod.isTop = true;
+//    }
+//    for (auto &innerMode : allMods) {
+//      if (mod.name != innerMode.name) {
+//        if (mod.content.contains(innerMode.name, Qt::CaseSensitive)) {
+//          mod.subModules.append(innerMode);
+//          innerMode.isSubmodule = true;
+//        }
+//      }
+//    }
+//  }
+
+//  for (auto iter = allMods.begin(); iter != allMods.end();) {
+//    if (iter->isSubmodule) {
+//      iter = allMods.erase(iter);
+//    } else {
+//      iter++;
+//    }
+//  }
+
+//  QTreeWidgetItem *parentItem{topitemDS};
+//  insertItem(parentItem, allMods);
+  topitemDS->setText(0, tr("Design Sources"));
+  // --------------------------------------------------------------------------
+
+  m_treeModuleHierachy->setHeaderHidden(true);
+  m_treeModuleHierachy->expandAll();
 }
 
 QTreeWidgetItem *SourcesForm::CreateFolderHierachyTree(QTreeWidgetItem *topItem,

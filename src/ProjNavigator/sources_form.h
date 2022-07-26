@@ -41,6 +41,9 @@ class SourcesForm : public QWidget {
   TclCommandIntegration* createTclCommandIntegarion();
   ProjectManager* ProjManager();
 
+ public slots:
+  void FileModified();
+
  signals:
   void OpenFile(QString);
   void ShowProperty(const QString&);
@@ -69,6 +72,7 @@ class SourcesForm : public QWidget {
   Ui::SourcesForm* ui;
 
   QTreeWidget* m_treeSrcHierachy;
+  QTreeWidget* m_treeModuleHierachy;
   QAction* m_actRefresh;
   QAction* m_actEditConstrsSets;
   QAction* m_actEditSimulSets;
@@ -87,6 +91,7 @@ class SourcesForm : public QWidget {
   void CreateActions();
   void UpdateSrcHierachyTree();
   void CreateFolderHierachyTree();
+  void CreateModuleHierachyTree();
   static QTreeWidgetItem* CreateFolderHierachyTree(QTreeWidgetItem* topItem,
                                                    const QString& path);
   static QTreeWidgetItem* CreateParentFolderItem(QTreeWidgetItem* parent,

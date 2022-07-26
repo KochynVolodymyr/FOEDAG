@@ -312,6 +312,8 @@ void MainWindow::ReShowWindow(QString strProject) {
           SLOT(SlotOpenFile(QString)));
   connect(textEditor, SIGNAL(CurrentFileChanged(QString)), sourcesForm,
           SLOT(SetCurrentFileItem(QString)));
+  connect(textEditor, SIGNAL(CurrentFileModified()), sourcesForm,
+          SLOT(FileModified()));
 
   QWidget* centralWidget = new QWidget(this);
   QBoxLayout* layout = new QBoxLayout(QBoxLayout::TopToBottom, centralWidget);

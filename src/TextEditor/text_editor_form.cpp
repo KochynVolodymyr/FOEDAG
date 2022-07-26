@@ -151,6 +151,7 @@ void TextEditorForm::SlotUpdateTabTitle(bool m) {
     m_tab_editor->setTabText(index, strName + tr("*"));
   } else {
     m_tab_editor->setTabText(index, strName.left(strName.lastIndexOf("*")));
+    emit CurrentFileModified();
   }
 }
 

@@ -64,6 +64,16 @@ void registerBasicGuiCommands(FOEDAG::Session* session) {
   };
   session->TclInterp()->registerCmd("gui_start", gui_start, 0, 0);
 
+  auto run_all = [](void* clientData, Tcl_Interp* interp, int argc,
+                      const char* argv[]) -> int {
+    LOG_CMD("run_all");
+    FOEDAG::MainWindow* w =
+        dynamic_cast<FOEDAG::MainWindow*>(GlobalSession->MainWindow());
+    w->RunAll();
+    return 0;
+  };
+  session->TclInterp()->registerCmd("run_all", run_all, 0, 0);
+
   auto gui_stop = [](void* clientData, Tcl_Interp* interp, int argc,
                      const char* argv[]) -> int {
     LOG_CMD("gui_stop");

@@ -121,6 +121,12 @@ void MainWindow::Info(const ProjectInfo& info) { m_projectInfo = info; }
 
 ProjectInfo MainWindow::Info() const { return m_projectInfo; }
 
+void MainWindow::RunAll() {
+  m_progressWidget->show();
+  m_compiler->start();
+  m_taskManager->startAll();
+}
+
 void MainWindow::newFile() {
   //  QTextStream out(stdout);
   //  out << "New file is requested\n";
@@ -269,9 +275,7 @@ void MainWindow::createActions() {
   stopAction->setStatusTip(tr("Stop compilation tasks"));
   stopAction->setEnabled(false);
   connect(startAction, &QAction::triggered, this, [this]() {
-    m_progressWidget->show();
-    m_compiler->start();
-    m_taskManager->startAll();
+    GlobalSession->CmdStack()->push_and_exec(new Command("run_all"));
   });
   connect(stopAction, &QAction::triggered, this, [this]() {
     m_compiler->Stop();

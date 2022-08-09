@@ -48,6 +48,8 @@ class MainWindow : public QMainWindow, public TopLevelInterface {
   void Info(const ProjectInfo& info);
   ProjectInfo Info() const;
 
+  void RunAll();
+
  private slots: /* slots */
   void newFile();
   void newProjectDlg();

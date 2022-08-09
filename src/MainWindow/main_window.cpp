@@ -288,6 +288,7 @@ void MainWindow::createActions() {
     Command cmd("gui_stop; exit");
     GlobalSession->CmdStack()->push_and_exec(&cmd);
   });
+  startAction->setObjectName("action_run_all");
 }
 
 void MainWindow::gui_start() { ReShowWindow(""); }

@@ -40,6 +40,7 @@ extern "C" {
 #include <iostream>
 #include <string>
 #include <vector>
+#include <QMouseEvent>
 
 #include "Command/CommandStack.h"
 #include "CommandLine.h"
@@ -121,7 +122,7 @@ void registerBasicGuiCommands(FOEDAG::Session* session) {
       return TCL_ERROR;
     }
 
-    QWidget* widget = topWidget->findChild<QWidget*>(widgetName);
+    QObject* widget = topWidget->findChild<QObject*>(widgetName);
     if (!widget) {
       Tcl_AppendResult(interp, qPrintable("No such widget"), (char*)NULL);
       return TCL_ERROR;
@@ -134,6 +135,42 @@ void registerBasicGuiCommands(FOEDAG::Session* session) {
     return TCL_OK;
   };
   session->TclInterp()->registerCmd("qt_getWidget", qt_getWidget,
+                                    GlobalSession->MainWindow(), nullptr);
+
+  auto sendEvent = [](void* clientData, Tcl_Interp* interp, int argc,
+                         const char* argv[]) -> int {
+    if (argc < 3) return TCL_ERROR;
+
+    const QString event{argv[1]};
+    if (event == "mousePress") {
+      QString widgetStr{argv[2]};
+      widgetStr.remove("QWidget(");
+      widgetStr.remove(")");
+      bool ok{false};
+      ulong widgetPtr = widgetStr.toULong(&ok, 16);
+      if (!ok || (widgetPtr == 0)) {
+        Tcl_AppendResult(
+            interp, qPrintable("Wrong format. Expetced: QWidget(0x?number?)"),
+            nullptr);
+        return TCL_ERROR;
+      }
+      QObject* widget = reinterpret_cast<QObject*>(widgetPtr);
+      if (!widget) {
+        Tcl_AppendResult(interp, qPrintable("No such widget"), (char*)NULL);
+        return TCL_ERROR;
+      }
+
+      // QEvent::Type type, const QPointF &localPos, Qt::MouseButton button,
+      // Qt::MouseButtons buttons, Qt::KeyboardModifiers modifiers
+      QApplication::postEvent(
+          widget,
+          new QMouseEvent(QEvent::MouseButtonPress, QPointF(10, 10), Qt::LeftButton,
+                          Qt::LeftButton, Qt::NoModifier));
+    }
+
+    return TCL_OK;
+  };
+  session->TclInterp()->registerCmd("sendEvent", sendEvent,
                                     GlobalSession->MainWindow(), nullptr);
 
   auto qt_showAllQtObjects = [](void* clientData, Tcl_Interp* interp, int argc,

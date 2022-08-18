@@ -2,9 +2,12 @@
 
 #include <QMessageBox>
 
+#include "Compiler/Compiler.h"
+#include "MainWindow/Session.h"
 #include "NewProject/ProjectManager/project_manager.h"
 #include "create_fileset_dialog.h"
 #include "ui_add_file_form.h"
+extern FOEDAG::Session *GlobalSession;
 
 using namespace FOEDAG;
 
@@ -19,6 +22,15 @@ AddFileForm::AddFileForm(QWidget *parent)
   box->setContentsMargins(0, 0, 0, 0);
   box->setSpacing(0);
   ui->m_frame->setLayout(box);
+  Compiler *compiler = GlobalSession->GetCompiler();
+  if (compiler->PinAssignOpts() == Compiler::PinAssignOpt::Random)
+    ui->select_random->setChecked(true);
+  else
+    ui->select_defineOrder->setChecked(true);
+  connect(ui->select_defineOrder, &QRadioButton::clicked, this,
+          &AddFileForm::pinAssign_opt_listen);
+  connect(ui->select_random, &QRadioButton::clicked, this,
+          &AddFileForm::pinAssign_opt_listen);
 
   m_pm = new ProjectManager(this);
 }
@@ -151,4 +163,12 @@ void AddFileForm::on_m_comboBoxSets_currentIndexChanged(const QString &arg1) {
   createdialog->close();
   createdialog->deleteLater();
   m_widgetGrid->currentFileSet(ui->m_comboBoxSets->currentText());
+}
+
+void AddFileForm::pinAssign_opt_listen() {
+  Compiler *compiler = GlobalSession->GetCompiler();
+  if (ui->select_random->isChecked())
+    compiler->PinAssignOpts(Compiler::PinAssignOpt::Random);
+  else
+    compiler->PinAssignOpts(Compiler::PinAssignOpt::In_Define_Order);
 }

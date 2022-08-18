@@ -307,6 +307,7 @@ add_dependencies(newfile_bin tcl_stubb_build)
 add_dependencies(ipconfigurator tcl_stubb_build)
 add_dependencies(ipconfigurator_bin tcl_stubb_build)
 add_dependencies(pinassignment tcl_stubb_build)
+add_dependencies(projnavigator tcl_build)
 
 if (APPLE)
   # In macOS, it is necessary to add the correct @rpath to the executable for

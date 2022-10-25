@@ -87,7 +87,8 @@ jobs:
     - name: Coverage
       if: matrix.mode == 'coverage'
       run: |
-        make debug coverage-build/foedag.coverage
+        ./code-coverage.sh
+        # make debug coverage-build/foedag.coverage
 
     - name: Valgrind
       if: matrix.mode == 'valgrind'
@@ -98,10 +99,11 @@ jobs:
     - name: Upload coverage
       # will show up under https://app.codecov.io/gh/os-fpga/FOEDAG
       if: matrix.mode == 'coverage'
-      uses: codecov/codecov-action@v3
+      uses: mikepenz/action-junit-report@v3
       with:
         files: coverage-build/foedag.coverage
         fail_ci_if_error: false
+        report_paths: '**/dbuild/tests/unittest/junitresults.xml'
 
     - name: Install Test
       if: matrix.mode == 'install'

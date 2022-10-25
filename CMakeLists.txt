@@ -45,6 +45,11 @@ option(
 
 project(FOEDAG)
 
+option(CODE_COVERAGE "Generate code coverage information files when running unit tests" OFF)
+if(CODE_COVERAGE)
+  add_compile_options(--coverage)
+  add_link_options(--coverage)
+endif()
 
 set (BUILD_TYPE_STRING Engineering)
 if (PRODUCTION_BUILD)

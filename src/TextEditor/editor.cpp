@@ -37,6 +37,8 @@ QString Editor::getFileName() const { return m_strFileName; }
 
 bool Editor::isModified() const { return m_scintilla->isModified(); }
 
+bool Editor::isSaveInProgress() const { return m_saveInProgress; }
+
 void Editor::FindFirst(const QString &strWord) {
   m_scintilla->findFirst(strWord, true, true, true, true, false);
   m_scintilla->findNext();
@@ -68,6 +70,8 @@ void Editor::markLine(int line) {
 
 void Editor::clearMarkers() { m_scintilla->markerDeleteAll(ERROR_MARKER); }
 
+void Editor::reload() { SetScintillaText(m_strFileName); }
+
 void Editor::Search() {
   QString strWord = "";
   if (m_scintilla->hasSelectedText()) {
@@ -82,12 +86,14 @@ void Editor::Save() {
     return;
   }
 
+  m_saveInProgress = true;
   QTextStream out(&file);
   QApplication::setOverrideCursor(Qt::WaitCursor);
   out << m_scintilla->text();
   QApplication::restoreOverrideCursor();
 
   m_scintilla->setModified(false);
+  m_saveInProgress = false;
 }
 
 void Editor::Undo() { m_scintilla->undo(); }
@@ -195,7 +201,6 @@ void Editor::InitToolBar() {
 void Editor::InitScintilla(int iFileType) {
   QFont font("Arial", 9, QFont::Normal);
   m_scintilla->setFont(font);
-  QFontMetrics fontmetrics = QFontMetrics(font);
   m_scintilla->setMarginWidth(0, 27 /*fontmetrics.width("0000")*/);
 
   m_scintilla->setMarginType(0, QsciScintilla::NumberMargin);

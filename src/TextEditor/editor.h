@@ -32,6 +32,7 @@ class Editor : public QWidget {
 
   QString getFileName() const;
   bool isModified() const;
+  bool isSaveInProgress() const;
 
   void FindFirst(const QString& strWord);
   void FindNext(const QString& strWord);
@@ -40,6 +41,7 @@ class Editor : public QWidget {
   void ReplaceAll(const QString& strFind, const QString& strDesWord);
   void markLine(int line);
   void clearMarkers();
+  void reload();
 
  signals:
   void EditorModificationChanged(bool m);
@@ -85,6 +87,7 @@ class Editor : public QWidget {
   void SetScintillaText(QString strFileName);
 
   void UpdateToolBarStates();
+  bool m_saveInProgress{false};
 };
 
 }  // namespace FOEDAG

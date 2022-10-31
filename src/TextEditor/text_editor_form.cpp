@@ -45,6 +45,9 @@ void TextEditorForm::InitForm() {
           SLOT(SlotReplaceAll(QString, QString)));
 
   initForm = true;
+
+  connect(&m_fileWatcher, &QFileSystemWatcher::fileChanged, this,
+          &TextEditorForm::fileModifiedOnDisk);
 }
 
 int TextEditorForm::OpenFile(const QString &strFileName) {
@@ -90,6 +93,7 @@ int TextEditorForm::OpenFile(const QString &strFileName) {
   pair.first = index;
   pair.second = editor;
   m_map_file_tabIndex_editor.insert(strFileName, pair);
+  m_fileWatcher.addPath(strFileName);
 
   return ret;
 }
@@ -128,6 +132,7 @@ void TextEditorForm::SlotTabCloseRequested(int index) {
   auto iter = m_map_file_tabIndex_editor.find(tabItem->getFileName());
   if (iter != m_map_file_tabIndex_editor.end()) {
     m_map_file_tabIndex_editor.erase(iter);
+    m_fileWatcher.removePath(iter.key());
   }
   // Removes the tab at position index from this stack of widgets.
   // The page widget itself is not deleted.
@@ -145,12 +150,14 @@ void TextEditorForm::SlotCurrentChanged(int index) {
 }
 
 void TextEditorForm::SlotUpdateTabTitle(bool m) {
-  int index = m_tab_editor->currentIndex();
-  QString strName = m_tab_editor->tabText(index);
-  if (m) {
-    m_tab_editor->setTabText(index, strName + tr("*"));
-  } else {
-    m_tab_editor->setTabText(index, strName.left(strName.lastIndexOf("*")));
+  int index = m_tab_editor->indexOf(qobject_cast<Editor *>(sender()));
+  if (index != -1) {
+    QString strName = m_tab_editor->tabText(index);
+    if (m) {
+      m_tab_editor->setTabText(index, strName + tr("*"));
+    } else {
+      m_tab_editor->setTabText(index, strName.left(strName.lastIndexOf("*")));
+    }
   }
 }
 
@@ -194,5 +201,15 @@ void TextEditorForm::SlotReplaceAll(const QString &strFindWord,
   Editor *tabEditor = (Editor *)m_tab_editor->currentWidget();
   if (tabEditor) {
     tabEditor->ReplaceAll(strFindWord, strDesWord);
+  }
+}
+
+void TextEditorForm::fileModifiedOnDisk(const QString &path) {
+  auto editorPair = m_map_file_tabIndex_editor.value(path, {0, nullptr});
+  auto editor{editorPair.second};
+  if (editor) {
+    if (!editor->isModified() && !editor->isSaveInProgress()) {
+      editor->reload();
+    }
   }
 }

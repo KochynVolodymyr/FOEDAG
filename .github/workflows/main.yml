@@ -87,7 +87,7 @@ jobs:
     - name: Coverage
       if: matrix.mode == 'coverage'
       run: |
-        make debug coverage-build/foedag.coverage
+        make coverage
 
     - name: Valgrind
       if: matrix.mode == 'valgrind'
@@ -100,7 +100,8 @@ jobs:
       if: matrix.mode == 'coverage'
       uses: codecov/codecov-action@v3
       with:
-        files: coverage-build/foedag.coverage
+        directory: dbuild/tests/unittest/
+        files: junitresults.xml
         fail_ci_if_error: false
 
     - name: Install Test

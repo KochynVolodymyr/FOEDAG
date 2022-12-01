@@ -79,6 +79,9 @@ test/unittest-coverage: run-cmake-coverage
 coverage-build/foedag.coverage: test/unittest-coverage
 	lcov --no-external --exclude "*_test.cpp" --capture --directory coverage-build/CMakeFiles/foedag.dir --base-directory src --output-file coverage-build/foedag.coverage
 
+coverage:
+	./code-coverage.sh
+	
 coverage-build/html: foedag-build/foedag.coverage
 	genhtml --output-directory coverage-build/html $^
 	realpath coverage-build/html/index.html
